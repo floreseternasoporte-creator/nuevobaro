@@ -242,10 +242,17 @@ body {
 
 .top-story-card {
   width: 220px;
+  background: var(--uber-surface);
+  border: 1px solid var(--uber-line);
+  border-radius: 18px;
+  padding: 10px;
+  box-shadow: 0 8px 20px rgba(17, 17, 17, 0.06);
 }
 
 .top-story-poster {
   height: 300px;
+  border-radius: 14px;
+  overflow: hidden;
 }
 
 .top-story-image {
@@ -326,6 +333,11 @@ body {
   flex-shrink: 0;
   width: 100%;
   max-width: 250px;
+  background: var(--uber-surface);
+  border: 1px solid var(--uber-line);
+  border-radius: 18px;
+  padding: 10px;
+  box-shadow: 0 8px 20px rgba(17, 17, 17, 0.06);
 }
 
 @media (max-width: 640px) {
@@ -338,9 +350,10 @@ body {
   position: relative;
   width: 100%;
   padding-top: 133.33%;
-  border-radius: 12px;
+  border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 6px 16px rgba(17, 17, 17, 0.08);
+  border: 1px solid rgba(17, 17, 17, 0.08);
 }
 
 .story-cover-image {
