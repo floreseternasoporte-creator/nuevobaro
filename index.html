@@ -2945,11 +2945,11 @@ firebase.auth().onAuthStateChanged(user => {
     }
     
     .nav-button:hover {
-      background-color: #f3f4f6;
+      background-color: transparent;
     }
     
     .nav-button.active:hover {
-      background-color: #dbeafe;
+      background-color: transparent;
     }
     
     #bottom-nav.hide {
@@ -4255,6 +4255,26 @@ function escapeHtml(text) {
   </div>
 
   <div class="p-4">
+    <div id="wiki-summary-card" class="hidden mb-4">
+      <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-semibold uppercase tracking-wide text-gray-400">Generado por IA</span>
+          <span id="wiki-type-badge" class="hidden rounded-full bg-gray-900 px-2 py-1 text-[10px] font-semibold uppercase text-white"></span>
+        </div>
+        <div class="mt-3 flex gap-3">
+          <div id="wiki-image-container" class="hidden h-20 w-16 overflow-hidden rounded-lg bg-gray-100">
+            <img id="wiki-image" src="" alt="Wikipedia" class="h-full w-full object-cover">
+          </div>
+          <div class="flex-1">
+            <p id="wiki-content" class="wiki-summary-text text-sm text-gray-700"></p>
+            <div class="mt-2">
+              <a id="wiki-link" class="text-xs font-semibold text-[#00A2FF]" target="_blank" rel="noopener">Ver en Wikipedia</a>
+            </div>
+            <div id="wiki-loading" class="mt-2 hidden text-xs text-gray-400">Buscando en Wikipedia...</div>
+          </div>
+        </div>
+      </div>
+    </div>
     <div id="search-category-chips" class="flex gap-2 overflow-x-auto pb-3 mb-4">
       <button type="button" class="category-chip active" data-value="">Todas</button>
       <button type="button" class="category-chip" data-value="recent">Recientes</button>
@@ -4285,26 +4305,6 @@ function escapeHtml(text) {
     </div>
 
     <div id="search-stories-section">
-      <div id="wiki-summary-card" class="hidden mb-4">
-        <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-          <div class="flex items-center justify-between">
-            <span class="text-[10px] font-semibold uppercase tracking-wide text-gray-400">Generado por IA</span>
-            <span id="wiki-type-badge" class="hidden rounded-full bg-gray-900 px-2 py-1 text-[10px] font-semibold uppercase text-white"></span>
-          </div>
-          <div class="mt-3 flex gap-3">
-            <div id="wiki-image-container" class="hidden h-20 w-16 overflow-hidden rounded-lg bg-gray-100">
-              <img id="wiki-image" src="" alt="Wikipedia" class="h-full w-full object-cover">
-            </div>
-            <div class="flex-1">
-              <p id="wiki-content" class="wiki-summary-text text-sm text-gray-700"></p>
-              <div class="mt-2">
-                <a id="wiki-link" class="text-xs font-semibold text-[#00A2FF]" target="_blank" rel="noopener">Ver en Wikipedia</a>
-              </div>
-              <div id="wiki-loading" class="mt-2 hidden text-xs text-gray-400">Buscando en Wikipedia...</div>
-            </div>
-          </div>
-        </div>
-      </div>
       <div id="search-books-carousel" class="grid grid-cols-3 gap-1"></div>
     </div>
 
@@ -4745,9 +4745,6 @@ function clearSearchInput() {
     }
 
     const lowerQuery = query.toLowerCase();
-    const isKeywordMatch = [...wikiKeywordSets.movies, ...wikiKeywordSets.series, ...wikiKeywordSets.books].some(keyword =>
-      lowerQuery.includes(keyword)
-    );
 
     wikiCard.classList.remove('hidden');
     wikiLoading.classList.remove('hidden');
@@ -4823,7 +4820,7 @@ function clearSearchInput() {
       const matchesBook = wikiKeywordSets.books.some(keyword => fullText.includes(keyword) || lowerQuery.includes(keyword));
       const contentType = matchesSeries ? 'Serie' : matchesMovie ? 'Película' : matchesBook ? 'Libro' : '';
 
-      if (!contentType && !isKeywordMatch) {
+      if (!contentType) {
         wikiCard.classList.add('hidden');
         if (categoryChips) categoryChips.classList.remove('hidden');
         return;
