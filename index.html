@@ -2751,11 +2751,29 @@ setInterval(checkScheduledChapters, 60000);
 <script>
 function loadFollowingStories() {
   const user = firebase.auth().currentUser;
-  if (!user) return;
+  const carouselSection = document.getElementById('stories-carousel');
+  const followingStoriesDiv = document.getElementById('following-stories');
+
+  if (!user) {
+    if (carouselSection) carouselSection.classList.add('hidden');
+    if (followingStoriesDiv) followingStoriesDiv.innerHTML = '';
+    return;
+  }
+
+  if (carouselSection) carouselSection.classList.remove('hidden');
 
   firebase.database().ref('following/' + user.uid).once('value').then(followingSnap => {
-    const followingStoriesDiv = document.getElementById('following-stories');
+    if (!followingStoriesDiv) return;
     followingStoriesDiv.innerHTML = '';
+
+    if (!followingSnap.exists()) {
+      followingStoriesDiv.innerHTML = `
+        <div class="text-sm text-gray-500 px-4 py-2">
+          Sigue autores para ver sus historias recientes.
+        </div>
+      `;
+      return;
+    }
 
     followingSnap.forEach(following => {
       const followedUserId = following.key;
