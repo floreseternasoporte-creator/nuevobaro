@@ -56,3 +56,7 @@ SUPPORT_EMAIL
 cd netlify/functions
 npm install
 ```
+
+## Documentación
+
+- Documentación duplicada del módulo CAPTCHA eliminada para mantener el repositorio limpio.
