@@ -2752,18 +2752,26 @@ setInterval(checkScheduledChapters, 60000);
     </style>
     
     <!-- SECCIONES DE CONTENIDO -->
-<section id="top-stories-section" class="mb-8">
-      <div class="flex justify-between items-center mb-4 px-4">
-      <h2 id="top-stories-title" class="text-base font-semibold text-gray-900">Mejores Historias</h2>
+<section id="top-stories-section" class="home-section">
+      <div class="home-section-header">
+      <div>
+        <p class="home-section-eyebrow">Para ti</p>
+        <h2 id="top-stories-title" class="text-base font-semibold text-gray-900">Mejores Historias</h2>
       </div>
-      <div id="top-stories" class="flex space-x-4 overflow-x-auto px-4 scrollbar-hide"></div>
+      <button class="home-section-action" type="button">Ver todo</button>
+      </div>
+      <div id="top-stories" class="home-section-content flex space-x-4 overflow-x-auto scrollbar-hide"></div>
 </section>
 
-<section id="new-releases-section" class="mb-8">
-      <div class="flex justify-between items-center mb-4 px-4">
-      <h2 id="new-releases-title" class="text-base font-semibold text-gray-900">Nuevos Lanzamientos</h2>
+<section id="new-releases-section" class="home-section">
+      <div class="home-section-header">
+      <div>
+        <p class="home-section-eyebrow">Recién llegadas</p>
+        <h2 id="new-releases-title" class="text-base font-semibold text-gray-900">Nuevos Lanzamientos</h2>
       </div>
-      <div id="new-releases" class="flex space-x-4 overflow-x-auto px-4 scrollbar-hide"></div>
+      <button class="home-section-action" type="button">Ver todo</button>
+      </div>
+      <div id="new-releases" class="home-section-content flex space-x-4 overflow-x-auto scrollbar-hide"></div>
 </section>
 
 <script>
@@ -2890,60 +2898,92 @@ firebase.auth().onAuthStateChanged(user => {
 }
 </style>
 
-    <section id="top10-section" class="mb-8">
-      <div class="flex justify-between items-center mb-4 px-4">
-        <h2 id="top10-title" class="text-base font-semibold text-gray-900">Top 10</h2>
+    <section id="top10-section" class="home-section">
+      <div class="home-section-header">
+        <div>
+          <p class="home-section-eyebrow">Ranking</p>
+          <h2 id="top10-title" class="text-base font-semibold text-gray-900">Top 10</h2>
+        </div>
+        <button class="home-section-action" type="button">Ver todo</button>
       </div>
-      <div id="top10" class="flex space-x-4 overflow-x-auto px-4 scrollbar-hide"></div>
+      <div id="top10" class="home-section-content flex space-x-4 overflow-x-auto scrollbar-hide"></div>
     </section>
 
-    <section id="popular-section" class="mb-8">
-      <div class="flex justify-between items-center mb-4 px-4">
-        <h2 id="popular-title" class="text-base font-semibold text-gray-900">Más Populares</h2>
+    <section id="popular-section" class="home-section">
+      <div class="home-section-header">
+        <div>
+          <p class="home-section-eyebrow">Popular ahora</p>
+          <h2 id="popular-title" class="text-base font-semibold text-gray-900">Más Populares</h2>
+        </div>
+        <button class="home-section-action" type="button">Ver todo</button>
       </div>
-      <div id="popular" class="flex space-x-4 overflow-x-auto px-4 scrollbar-hide"></div>
+      <div id="popular" class="home-section-content flex space-x-4 overflow-x-auto scrollbar-hide"></div>
     </section>
 
-    <section id="terror-section" class="mb-8">
-      <div class="flex justify-between items-center mb-4 px-4">
-        <h2 id="terror-title" class="text-base font-semibold text-gray-900">Terror Destacado</h2>
+    <section id="terror-section" class="home-section">
+      <div class="home-section-header">
+        <div>
+          <p class="home-section-eyebrow">Género</p>
+          <h2 id="terror-title" class="text-base font-semibold text-gray-900">Terror Destacado</h2>
+        </div>
+        <button class="home-section-action" type="button">Ver todo</button>
       </div>
-      <div id="terror-stories" class="flex space-x-4 overflow-x-auto px-4 scrollbar-hide"></div>
+      <div id="terror-stories" class="home-section-content flex space-x-4 overflow-x-auto scrollbar-hide"></div>
     </section>
 
-    <section id="trending-section" class="mb-8">
-      <div class="flex justify-between items-center mb-4 px-4">
-        <h2 id="trending-title" class="text-base font-semibold text-gray-900">Tendencias</h2>
+    <section id="trending-section" class="home-section">
+      <div class="home-section-header">
+        <div>
+          <p class="home-section-eyebrow">En tendencia</p>
+          <h2 id="trending-title" class="text-base font-semibold text-gray-900">Tendencias</h2>
+        </div>
+        <button class="home-section-action" type="button">Ver todo</button>
       </div>
-      <div id="trending-stories" class="flex space-x-4 overflow-x-auto px-4 scrollbar-hide"></div>
+      <div id="trending-stories" class="home-section-content flex space-x-4 overflow-x-auto scrollbar-hide"></div>
     </section>
 
-    <section id="mystery-section" class="mb-8">
-      <div class="flex justify-between items-center mb-4 px-4">
-        <h2 id="mystery-title" class="text-base font-semibold text-gray-900">Popular en Misterio</h2>
+    <section id="mystery-section" class="home-section">
+      <div class="home-section-header">
+        <div>
+          <p class="home-section-eyebrow">Género</p>
+          <h2 id="mystery-title" class="text-base font-semibold text-gray-900">Popular en Misterio</h2>
+        </div>
+        <button class="home-section-action" type="button">Ver todo</button>
       </div>
-      <div id="mystery-stories" class="flex space-x-4 overflow-x-auto px-4 scrollbar-hide"></div>
+      <div id="mystery-stories" class="home-section-content flex space-x-4 overflow-x-auto scrollbar-hide"></div>
     </section>
 
-    <section id="adventure-section" class="mb-8">
-      <div class="flex justify-between items-center mb-4 px-4">
-        <h2 id="adventure-title" class="text-base font-semibold text-gray-900">Lo Mejor en Aventura</h2>
+    <section id="adventure-section" class="home-section">
+      <div class="home-section-header">
+        <div>
+          <p class="home-section-eyebrow">Género</p>
+          <h2 id="adventure-title" class="text-base font-semibold text-gray-900">Lo Mejor en Aventura</h2>
+        </div>
+        <button class="home-section-action" type="button">Ver todo</button>
       </div>
-      <div id="adventure-stories" class="flex space-x-4 overflow-x-auto px-4 scrollbar-hide"></div>
+      <div id="adventure-stories" class="home-section-content flex space-x-4 overflow-x-auto scrollbar-hide"></div>
     </section>
 
-    <section id="suggested-section" class="mb-8">
-      <div class="flex justify-between items-center mb-4 px-4">
-        <h2 id="suggested-title" class="text-base font-semibold text-gray-900">Recomendado para Ti</h2>
+    <section id="suggested-section" class="home-section">
+      <div class="home-section-header">
+        <div>
+          <p class="home-section-eyebrow">Recomendado</p>
+          <h2 id="suggested-title" class="text-base font-semibold text-gray-900">Recomendado para Ti</h2>
+        </div>
+        <button class="home-section-action" type="button">Ver todo</button>
       </div>
-      <div id="suggested-stories" class="flex space-x-4 overflow-x-auto px-4 scrollbar-hide"></div>
+      <div id="suggested-stories" class="home-section-content flex space-x-4 overflow-x-auto scrollbar-hide"></div>
     </section>
 
-    <section id="featured-authors-section" class="mb-8">
-      <div class="flex justify-between items-center mb-4 px-4">
-        <h2 id="featured-authors-title" class="text-base font-semibold text-gray-900">Autores Destacados</h2>
+    <section id="featured-authors-section" class="home-section">
+      <div class="home-section-header">
+        <div>
+          <p class="home-section-eyebrow">Comunidad</p>
+          <h2 id="featured-authors-title" class="text-base font-semibold text-gray-900">Autores Destacados</h2>
+        </div>
+        <button class="home-section-action" type="button">Ver todo</button>
       </div>
-      <div id="featured-authors" class="flex space-x-4 overflow-x-auto px-4 scrollbar-hide"></div>
+      <div id="featured-authors" class="home-section-content flex space-x-4 overflow-x-auto scrollbar-hide"></div>
     </section>
   </div>
 
