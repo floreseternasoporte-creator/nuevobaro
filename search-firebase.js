@@ -6,10 +6,24 @@ function handleSearchInput() {
   
   if (query.length > 0) {
     clearBtn.classList.remove('hidden');
-    searchContent(query);
   } else {
     clearBtn.classList.add('hidden');
+  }
+
+  if (typeof window.performRealTimeSearch === 'function') {
+    window.performRealTimeSearch();
+    if (!query.length) {
+      clearSearchResults();
+      loadPopularStories();
+    }
+    return;
+  }
+
+  if (query.length > 0) {
+    searchContent(query);
+  } else {
     clearSearchResults();
+    loadPopularStories();
   }
 }
 
@@ -17,6 +31,7 @@ function clearSearchInput() {
   document.getElementById('search-input').value = '';
   document.getElementById('clear-search-btn').classList.add('hidden');
   clearSearchResults();
+  loadPopularStories();
 }
 
 function clearSearchResults() {
@@ -24,18 +39,43 @@ function clearSearchResults() {
   document.getElementById('search-authors-list').innerHTML = '';
 }
 
+async function getAllStories() {
+  if (typeof window.loadStoriesFromAWS === 'function') {
+    try {
+      const stories = await window.loadStoriesFromAWS();
+      if (Array.isArray(stories) && stories.length) {
+        return stories;
+      }
+    } catch (error) {
+      console.error('Error loading stories from AWS helper:', error);
+    }
+  }
+
+  try {
+    const storiesSnapshot = await firebase.database().ref('stories').once('value');
+    const stories = [];
+    storiesSnapshot.forEach(child => {
+      const story = child.val() || {};
+      stories.push({ id: story.id || child.key, ...story });
+    });
+    return stories;
+  } catch (error) {
+    console.error('Error loading stories from Firebase:', error);
+    return [];
+  }
+}
+
 async function searchContent(query) {
   const lowerQuery = query.toLowerCase();
   
   // Buscar historias
   try {
-    const storiesSnapshot = await firebase.database().ref('stories').once('value');
+    const stories = await getAllStories();
     const storiesContainer = document.getElementById('search-books-carousel');
     storiesContainer.innerHTML = '';
     
     let foundStories = 0;
-    storiesSnapshot.forEach(child => {
-      const story = child.val();
+    stories.forEach(story => {
       const title = (story.title || '').toLowerCase();
       const author = (story.username || story.authorName || '').toLowerCase();
       
@@ -47,7 +87,7 @@ async function searchContent(query) {
                class="w-full aspect-[3/4] object-cover rounded-lg" 
                alt="${story.title || 'Historia'}">
         `;
-        storyCard.onclick = () => openStoryDetail({id: child.key, ...story});
+        storyCard.onclick = () => openStoryDetail(story);
         storiesContainer.appendChild(storyCard);
         foundStories++;
       }
@@ -125,26 +165,24 @@ async function followUser(userId) {
 // Cargar historias populares al abrir búsqueda
 async function loadPopularStories() {
   try {
-    const snapshot = await firebase.database().ref('stories').limitToLast(20).once('value');
+    const stories = await getAllStories();
     const storiesContainer = document.getElementById('search-books-carousel');
     storiesContainer.innerHTML = '';
     
-    const stories = [];
-    snapshot.forEach(child => {
-      stories.push({id: child.key, ...child.val()});
-    });
-    
-    stories.reverse().slice(0, 12).forEach(story => {
-      const storyCard = document.createElement('div');
-      storyCard.className = 'cursor-pointer';
-      storyCard.innerHTML = `
-        <img src="${story.coverImage || 'https://via.placeholder.com/150'}" 
-             class="w-full aspect-[3/4] object-cover rounded-lg" 
-             alt="${story.title || 'Historia'}">
-      `;
-      storyCard.onclick = () => openStoryDetail(story);
-      storiesContainer.appendChild(storyCard);
-    });
+    stories
+      .sort((a, b) => (b.views || 0) - (a.views || 0))
+      .slice(0, 12)
+      .forEach(story => {
+        const storyCard = document.createElement('div');
+        storyCard.className = 'cursor-pointer';
+        storyCard.innerHTML = `
+          <img src="${story.coverImage || 'https://via.placeholder.com/150'}" 
+               class="w-full aspect-[3/4] object-cover rounded-lg" 
+               alt="${story.title || 'Historia'}">
+        `;
+        storyCard.onclick = () => openStoryDetail(story);
+        storiesContainer.appendChild(storyCard);
+      });
   } catch (error) {
     console.error('Error:', error);
   }
