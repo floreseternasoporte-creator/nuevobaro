@@ -1,10 +1,10 @@
-# Configuración de Netlify Functions
+# Configuración de Vercel Functions
 
 ## Arquitectura
 - **Firebase**: Solo autenticación
 - **AWS S3**: TODO (datos + imágenes)
 - **AWS SES**: Emails
-- **Netlify Functions**: Serverless
+- **Vercel Functions**: Serverless
 
 ## Estructura en S3
 
@@ -45,7 +45,7 @@ SUPPORT_EMAIL
 - `likes.js` - POST likes
 - `following.js` - POST follow/unfollow
 - `notifications.js` - GET/POST notificaciones
-
+- `chapters.js` - GET/POST capítulos
 - `scheduled-chapters.js` - GET/POST capítulos programados
 - `user-stats.js` - GET estadísticas
 - `users.js` - GET/POST perfiles de usuario
@@ -55,9 +55,12 @@ SUPPORT_EMAIL
 ## Instalación
 
 ```bash
-cd netlify/functions
 npm install
 ```
+
+## Endpoints en Vercel
+
+Las funciones se exponen bajo `/api/*` en Vercel.
 
 ## Documentación
 
