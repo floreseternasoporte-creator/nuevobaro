@@ -12294,27 +12294,44 @@ async function likeNote(noteId) {
     document.getElementById('search-view').classList.add('hidden');
     mainApp.classList.remove('hidden');
   }
+  let searchStoriesRef = null;
+  let searchStoriesHandler = null;
+
+  function detachSearchStoriesListener() {
+    if (searchStoriesRef && searchStoriesHandler) {
+      searchStoriesRef.off('value', searchStoriesHandler);
+    }
+    searchStoriesRef = null;
+    searchStoriesHandler = null;
+  }
+
   function performRealTimeSearch() {
   const query = document.getElementById('search-input').value.trim().toLowerCase();
   const category = document.getElementById('category-filter').value;
-  const recentThreshold = Date.now() - (24 * 60 * 60 * 1000);
-  
-  firebase.database().ref('stories').once('value').then(snapshot => {
-    let books = [];
+  const recentRangeMs = 7 * 24 * 60 * 60 * 1000;
+  const recentThreshold = Date.now() - recentRangeMs;
+
+  detachSearchStoriesListener();
+  searchStoriesRef = firebase.database().ref('stories');
+  searchStoriesHandler = snapshot => {
+    const books = [];
     snapshot.forEach(child => {
       const story = child.val();
-      const storyTimestamp = story.timestamp || story.createdAt || story.lastUpdate;
+      const storyTimestamp = Number(story.timestamp);
+      const isRecent = Number.isFinite(storyTimestamp) && storyTimestamp >= recentThreshold;
       const matchesQuery = story.title && story.title.toLowerCase().includes(query);
       const matchesCategory = !category
-        || (category === 'recent' && storyTimestamp && storyTimestamp >= recentThreshold)
+        || (category === 'recent' && isRecent)
+        || (category === 'system' && (story.category === 'sistema' || story.category === 'system' || story.type === 'sistema' || story.type === 'system'))
         || story.category === category;
-      
+
       if (matchesQuery && matchesCategory) {
         books.push(story);
       }
     });
     renderBooksCarousel(books);
-  });
+  };
+  searchStoriesRef.on('value', searchStoriesHandler);
 
   if (query) {
     firebase.database().ref('users').once('value').then(snapshot => {
