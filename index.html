@@ -1017,29 +1017,57 @@ body {
 </head>
 
 <script>
-// Funciones para capítulos programados
-function saveScheduledChapter(chapterId, publishDate) {
-  firebase.database().ref('scheduledChapters/' + chapterId).set({
-    publishDate: publishDate,
-    status: 'pending'
-  });
+// Funciones para capítulos programados (AWS)
+async function saveScheduledChapter(chapterId, publishDate) {
+  if (!currentEditingStory?.id) {
+    console.warn('No story selected for scheduling.');
+    return;
+  }
+  try {
+    await fetch('/.netlify/functions/scheduled-chapters', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'save',
+        chapterId,
+        storyId: currentEditingStory.id,
+        publishDate
+      })
+    });
+  } catch (error) {
+    console.error('Error scheduling chapter:', error);
+  }
 }
 
-function checkScheduledChapters() {
-  const now = new Date().getTime();
-  firebase.database().ref('scheduledChapters').once('value', snapshot => {
-    snapshot.forEach(child => {
-      const scheduled = child.val();
-      if (scheduled.status === 'pending' && new Date(scheduled.publishDate).getTime() <= now) {
-        // Publicar el capítulo
-        firebase.database().ref('stories/' + currentEditingStory.id + '/chapters/' + child.key).update({
-          status: 'published'
-        });
-        // Actualizar estado del capítulo programado
-        child.ref.update({ status: 'published' });
-      }
-    });
-  });
+async function checkScheduledChapters() {
+  try {
+    const response = await fetch('/.netlify/functions/scheduled-chapters');
+    if (!response.ok) return;
+    const data = await response.json();
+    const chapters = data.chapters || [];
+    const now = new Date().getTime();
+
+    await Promise.all(
+      chapters
+        .filter(
+          (scheduled) =>
+            scheduled.status === 'pending' &&
+            new Date(scheduled.publishDate).getTime() <= now
+        )
+        .map((scheduled) =>
+          fetch('/.netlify/functions/scheduled-chapters', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'publish',
+              chapterId: scheduled.chapterId
+            })
+          })
+        )
+    );
+  } catch (error) {
+    console.error('Error checking scheduled chapters:', error);
+  }
 }
 
 // Verificar capítulos programados cada minuto

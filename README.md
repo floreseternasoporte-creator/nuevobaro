@@ -45,6 +45,7 @@ SUPPORT_EMAIL
 - `likes.js` - POST likes
 - `following.js` - POST follow/unfollow
 - `notifications.js` - GET/POST notificaciones
+- `scheduled-chapters.js` - GET/POST capítulos programados
 - `user-stats.js` - GET estadísticas
 - `users.js` - GET/POST perfiles de usuario
 - `upload-image.js` - POST imágenes
