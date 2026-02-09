@@ -356,6 +356,41 @@ body {
   border: 1px solid rgba(17, 17, 17, 0.08);
 }
 
+.section-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.section-eyebrow {
+  display: block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--uber-muted);
+  margin-bottom: 4px;
+}
+
+.section-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--uber-black);
+  background: var(--uber-field);
+  padding: 6px 12px;
+  border-radius: 9999px;
+  border: 1px solid var(--uber-line);
+  transition: background 0.2s ease-in-out;
+  box-shadow: 0 4px 10px rgba(17, 17, 17, 0.08);
+}
+
+.section-action:hover {
+  background: var(--uber-line);
+}
+
 .story-placeholder .story-cover-container,
 .top-story-placeholder .top-story-poster {
   background: var(--uber-field);
@@ -2752,24 +2787,26 @@ setInterval(checkScheduledChapters, 60000);
     </style>
     
     <!-- SECCIONES DE CONTENIDO -->
-<section id="top-stories-section" class="home-section">
-      <div class="home-section-header">
-      <div>
-        <p class="home-section-eyebrow">Para ti</p>
-        <h2 id="top-stories-title" class="text-base font-semibold text-gray-900">Mejores Historias</h2>
+<section id="top-stories-section" class="mb-8">
+      <div class="section-header mb-4 px-4">
+        <div>
+          <p class="section-eyebrow">Para ti</p>
+          <h2 id="top-stories-title" class="text-base font-semibold text-gray-900">Mejores Historias</h2>
+        </div>
+        <button class="section-action" type="button">Ver todo</button>
       </div>
       <button class="home-section-action" type="button">Ver todo</button>
       </div>
       <div id="top-stories" class="home-section-content flex space-x-4 overflow-x-auto scrollbar-hide"></div>
 </section>
 
-<section id="new-releases-section" class="home-section">
-      <div class="home-section-header">
-      <div>
-        <p class="home-section-eyebrow">Recién llegadas</p>
-        <h2 id="new-releases-title" class="text-base font-semibold text-gray-900">Nuevos Lanzamientos</h2>
-      </div>
-      <button class="home-section-action" type="button">Ver todo</button>
+<section id="new-releases-section" class="mb-8">
+      <div class="section-header mb-4 px-4">
+        <div>
+          <p class="section-eyebrow">Recién llegadas</p>
+          <h2 id="new-releases-title" class="text-base font-semibold text-gray-900">Nuevos Lanzamientos</h2>
+        </div>
+        <button class="section-action" type="button">Ver todo</button>
       </div>
       <div id="new-releases" class="home-section-content flex space-x-4 overflow-x-auto scrollbar-hide"></div>
 </section>
@@ -2898,90 +2935,90 @@ firebase.auth().onAuthStateChanged(user => {
 }
 </style>
 
-    <section id="top10-section" class="home-section">
-      <div class="home-section-header">
+    <section id="top10-section" class="mb-8">
+      <div class="section-header mb-4 px-4">
         <div>
-          <p class="home-section-eyebrow">Ranking</p>
+          <p class="section-eyebrow">Ranking</p>
           <h2 id="top10-title" class="text-base font-semibold text-gray-900">Top 10</h2>
         </div>
-        <button class="home-section-action" type="button">Ver todo</button>
+        <button class="section-action" type="button">Ver todo</button>
       </div>
       <div id="top10" class="home-section-content flex space-x-4 overflow-x-auto scrollbar-hide"></div>
     </section>
 
-    <section id="popular-section" class="home-section">
-      <div class="home-section-header">
+    <section id="popular-section" class="mb-8">
+      <div class="section-header mb-4 px-4">
         <div>
-          <p class="home-section-eyebrow">Popular ahora</p>
+          <p class="section-eyebrow">Popular ahora</p>
           <h2 id="popular-title" class="text-base font-semibold text-gray-900">Más Populares</h2>
         </div>
-        <button class="home-section-action" type="button">Ver todo</button>
+        <button class="section-action" type="button">Ver todo</button>
       </div>
       <div id="popular" class="home-section-content flex space-x-4 overflow-x-auto scrollbar-hide"></div>
     </section>
 
-    <section id="terror-section" class="home-section">
-      <div class="home-section-header">
+    <section id="terror-section" class="mb-8">
+      <div class="section-header mb-4 px-4">
         <div>
-          <p class="home-section-eyebrow">Género</p>
+          <p class="section-eyebrow">Género</p>
           <h2 id="terror-title" class="text-base font-semibold text-gray-900">Terror Destacado</h2>
         </div>
-        <button class="home-section-action" type="button">Ver todo</button>
+        <button class="section-action" type="button">Ver todo</button>
       </div>
       <div id="terror-stories" class="home-section-content flex space-x-4 overflow-x-auto scrollbar-hide"></div>
     </section>
 
-    <section id="trending-section" class="home-section">
-      <div class="home-section-header">
+    <section id="trending-section" class="mb-8">
+      <div class="section-header mb-4 px-4">
         <div>
-          <p class="home-section-eyebrow">En tendencia</p>
+          <p class="section-eyebrow">En tendencia</p>
           <h2 id="trending-title" class="text-base font-semibold text-gray-900">Tendencias</h2>
         </div>
-        <button class="home-section-action" type="button">Ver todo</button>
+        <button class="section-action" type="button">Ver todo</button>
       </div>
       <div id="trending-stories" class="home-section-content flex space-x-4 overflow-x-auto scrollbar-hide"></div>
     </section>
 
-    <section id="mystery-section" class="home-section">
-      <div class="home-section-header">
+    <section id="mystery-section" class="mb-8">
+      <div class="section-header mb-4 px-4">
         <div>
-          <p class="home-section-eyebrow">Género</p>
+          <p class="section-eyebrow">Género</p>
           <h2 id="mystery-title" class="text-base font-semibold text-gray-900">Popular en Misterio</h2>
         </div>
-        <button class="home-section-action" type="button">Ver todo</button>
+        <button class="section-action" type="button">Ver todo</button>
       </div>
       <div id="mystery-stories" class="home-section-content flex space-x-4 overflow-x-auto scrollbar-hide"></div>
     </section>
 
-    <section id="adventure-section" class="home-section">
-      <div class="home-section-header">
+    <section id="adventure-section" class="mb-8">
+      <div class="section-header mb-4 px-4">
         <div>
-          <p class="home-section-eyebrow">Género</p>
+          <p class="section-eyebrow">Género</p>
           <h2 id="adventure-title" class="text-base font-semibold text-gray-900">Lo Mejor en Aventura</h2>
         </div>
-        <button class="home-section-action" type="button">Ver todo</button>
+        <button class="section-action" type="button">Ver todo</button>
       </div>
       <div id="adventure-stories" class="home-section-content flex space-x-4 overflow-x-auto scrollbar-hide"></div>
     </section>
 
-    <section id="suggested-section" class="home-section">
-      <div class="home-section-header">
+    <section id="suggested-section" class="mb-8">
+      <div class="section-header mb-4 px-4">
         <div>
-          <p class="home-section-eyebrow">Recomendado</p>
+          <p class="section-eyebrow">Recomendado</p>
           <h2 id="suggested-title" class="text-base font-semibold text-gray-900">Recomendado para Ti</h2>
         </div>
-        <button class="home-section-action" type="button">Ver todo</button>
+        <button class="section-action" type="button">Ver todo</button>
       </div>
       <div id="suggested-stories" class="home-section-content flex space-x-4 overflow-x-auto scrollbar-hide"></div>
     </section>
 
-    <section id="featured-authors-section" class="home-section">
-      <div class="home-section-header">
+    <section id="featured-authors-section" class="mb-8">
+      <div class="section-header mb-4 px-4">
         <div>
-          <p class="home-section-eyebrow">Comunidad</p>
+          <p class="section-eyebrow">Comunidad</p>
           <h2 id="featured-authors-title" class="text-base font-semibold text-gray-900">Autores Destacados</h2>
         </div>
-        <button class="home-section-action" type="button">Ver todo</button>
+        <button class="section-action" type="button">Ver todo</button>
       </div>
       <div id="featured-authors" class="home-section-content flex space-x-4 overflow-x-auto scrollbar-hide"></div>
     </section>
