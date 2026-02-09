@@ -52,15 +52,14 @@ async function getAllStories() {
   }
 
   try {
-    const storiesSnapshot = await firebase.database().ref('stories').once('value');
-    const stories = [];
-    storiesSnapshot.forEach(child => {
-      const story = child.val() || {};
-      stories.push({ id: story.id || child.key, ...story });
-    });
-    return stories;
+    const response = await fetch('/api/get-stories');
+    if (!response.ok) {
+      throw new Error('No se pudo cargar historias');
+    }
+    const data = await response.json();
+    return data.stories || [];
   } catch (error) {
-    console.error('Error loading stories from Firebase:', error);
+    console.error('Error loading stories from AWS:', error);
     return [];
   }
 }
@@ -102,41 +101,45 @@ async function searchContent(query) {
   
   // Buscar autores
   try {
-    const usersSnapshot = await firebase.database().ref('users').once('value');
+    const response = await fetch('/api/users');
+    if (!response.ok) {
+      throw new Error('No se pudieron cargar autores');
+    }
+    const data = await response.json();
+    const users = data.users || [];
     const authorsContainer = document.getElementById('search-authors-list');
     authorsContainer.innerHTML = '';
-    
+
     let foundAuthors = 0;
-    usersSnapshot.forEach(child => {
-      const user = child.val();
+    users.forEach((user) => {
       const username = (user.username || '').toLowerCase();
       const email = (user.email || '').toLowerCase();
-      
+
       if (username.includes(lowerQuery) || email.includes(lowerQuery)) {
         const authorCard = document.createElement('div');
         authorCard.className = 'flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer';
         authorCard.innerHTML = `
-          <img src="${user.profileImage || 'https://via.placeholder.com/40'}" 
-               class="w-12 h-12 rounded-full object-cover" 
+          <img src="${user.profileImage || 'https://via.placeholder.com/40'}"
+               class="w-12 h-12 rounded-full object-cover"
                alt="${user.username}">
           <div class="flex-1">
             <p class="font-semibold text-sm">${user.username || 'Usuario'}</p>
             <p class="text-xs text-gray-500">@${user.username || 'usuario'}</p>
           </div>
-          <button onclick="followUser('${child.key}')" class="px-4 py-1.5 bg-[#00A2FF] text-white text-sm font-semibold rounded-full hover:bg-[#0066CC]">
+          <button onclick="followUser('${user.userId}')" class="px-4 py-1.5 bg-[#00A2FF] text-white text-sm font-semibold rounded-full hover:bg-[#0066CC]">
             Seguir
           </button>
         `;
         authorCard.onclick = (e) => {
           if (!e.target.closest('button')) {
-            openAuthorProfile(child.key);
+            openAuthorProfile(user.userId);
           }
         };
         authorsContainer.appendChild(authorCard);
         foundAuthors++;
       }
     });
-    
+
     if (foundAuthors === 0) {
       authorsContainer.innerHTML = '<div class="text-center text-gray-500 py-8">No se encontraron autores</div>';
     }
@@ -153,8 +156,18 @@ async function followUser(userId) {
   }
   
   try {
-    await firebase.database().ref('following/' + currentUser.uid + '/' + userId).set(true);
-    await firebase.database().ref('followers/' + userId + '/' + currentUser.uid).set(true);
+    const response = await fetch('/api/following', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: currentUser.uid,
+        targetUserId: userId,
+        action: 'follow'
+      })
+    });
+    if (!response.ok) {
+      throw new Error('No se pudo seguir');
+    }
     alert('Ahora sigues a este usuario');
   } catch (error) {
     console.error('Error:', error);
