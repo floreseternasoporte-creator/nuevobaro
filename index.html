@@ -1017,29 +1017,57 @@ body {
 </head>
 
 <script>
-// Funciones para capítulos programados
-function saveScheduledChapter(chapterId, publishDate) {
-  firebase.database().ref('scheduledChapters/' + chapterId).set({
-    publishDate: publishDate,
-    status: 'pending'
-  });
+// Funciones para capítulos programados (AWS)
+async function saveScheduledChapter(chapterId, publishDate) {
+  if (!currentEditingStory?.id) {
+    console.warn('No story selected for scheduling.');
+    return;
+  }
+  try {
+    await fetch('/.netlify/functions/scheduled-chapters', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'save',
+        chapterId,
+        storyId: currentEditingStory.id,
+        publishDate
+      })
+    });
+  } catch (error) {
+    console.error('Error scheduling chapter:', error);
+  }
 }
 
-function checkScheduledChapters() {
-  const now = new Date().getTime();
-  firebase.database().ref('scheduledChapters').once('value', snapshot => {
-    snapshot.forEach(child => {
-      const scheduled = child.val();
-      if (scheduled.status === 'pending' && new Date(scheduled.publishDate).getTime() <= now) {
-        // Publicar el capítulo
-        firebase.database().ref('stories/' + currentEditingStory.id + '/chapters/' + child.key).update({
-          status: 'published'
-        });
-        // Actualizar estado del capítulo programado
-        child.ref.update({ status: 'published' });
-      }
-    });
-  });
+async function checkScheduledChapters() {
+  try {
+    const response = await fetch('/.netlify/functions/scheduled-chapters');
+    if (!response.ok) return;
+    const data = await response.json();
+    const chapters = data.chapters || [];
+    const now = new Date().getTime();
+
+    await Promise.all(
+      chapters
+        .filter(
+          (scheduled) =>
+            scheduled.status === 'pending' &&
+            new Date(scheduled.publishDate).getTime() <= now
+        )
+        .map((scheduled) =>
+          fetch('/.netlify/functions/scheduled-chapters', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'publish',
+              chapterId: scheduled.chapterId
+            })
+          })
+        )
+    );
+  } catch (error) {
+    console.error('Error checking scheduled chapters:', error);
+  }
 }
 
 // Verificar capítulos programados cada minuto
@@ -11777,6 +11805,28 @@ async function likeNote(noteId) {
     authTitle.textContent = isLogin ? 'Iniciar sesión' : 'Crear cuenta';
     toggleAuth.textContent = isLogin ? '¿No tienes cuenta? Regístrate' : '¿Ya tienes cuenta? Inicia sesión';
   });
+
+  async function syncUserProfileToAWS(user, profileOverrides = {}) {
+    if (!user) return;
+    const payload = {
+      userId: user.uid,
+      email: user.email || '',
+      username: user.displayName || user.email?.split('@')[0] || 'Usuario',
+      profileImage: user.photoURL || '',
+      ...profileOverrides
+    };
+
+    try {
+      await fetch('/.netlify/functions/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    } catch (error) {
+      console.warn('No se pudo sincronizar perfil en AWS:', error);
+    }
+  }
+
   authForm.addEventListener('submit', e => {
     e.preventDefault();
     authError.classList.add('hidden');
@@ -11800,7 +11850,7 @@ async function likeNote(noteId) {
           userCountRef.transaction(count => (count || 0) + 1).then(result => {
             const newCount = result.snapshot.val();
             const isVerified = newCount <= 100;
-            firebase.database().ref('users/' + user.uid).set({
+            const userProfile = {
               username: "Nuevo Usuario",
               bio: "",
               profileImage: "",
@@ -11811,7 +11861,9 @@ async function likeNote(noteId) {
               registrationTimestamp: Date.now(),
               founder: false,
               email: user.email
-            });
+            };
+            firebase.database().ref('users/' + user.uid).set(userProfile);
+            syncUserProfileToAWS(user, userProfile);
           });
         })
         .catch(error => {
@@ -11882,6 +11934,7 @@ async function likeNote(noteId) {
           firebase.auth().signOut();
           return;
         }
+        syncUserProfileToAWS(user, data || {});
         authFormContainer.style.display = 'none';
         mainAppContainer.style.display = 'flex';
         loadStories();
