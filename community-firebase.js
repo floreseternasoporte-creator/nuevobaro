@@ -1,4 +1,52 @@
-// community-firebase.js - Comunidad con Firebase
+// community-firebase.js - Comunidad con AWS (auth en Firebase)
+
+async function fetchUserProfile(user) {
+  try {
+    const response = await fetch(`/.netlify/functions/users?userId=${user.uid}`);
+    if (response.ok) {
+      const data = await response.json();
+      return data.user || null;
+    }
+  } catch (error) {
+    console.warn('No se pudo cargar perfil desde AWS:', error);
+  }
+
+  const fallbackName = user.displayName || user.email?.split('@')[0] || 'Usuario';
+  return {
+    userId: user.uid,
+    username: fallbackName,
+    profileImage: user.photoURL || 'https://via.placeholder.com/40'
+  };
+}
+
+async function uploadCommunityImage(file, userId) {
+  const reader = new FileReader();
+  const imageData = await new Promise((resolve, reject) => {
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  const response = await fetch('/.netlify/functions/upload-image', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      imageData,
+      fileName: file.name,
+      userId,
+      timestamp: Date.now(),
+      contentType: file.type || 'image/jpeg',
+      imageType: 'community'
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error('No se pudo subir la imagen');
+  }
+
+  const data = await response.json();
+  return data.imageUrl;
+}
 
 async function publishNote() {
   const content = document.getElementById('note-content').value.trim();
@@ -20,29 +68,31 @@ async function publishNote() {
   publishButton.textContent = 'Publicando...';
 
   try {
-    const userData = (await firebase.database().ref('users/' + user.uid).once('value')).val();
+    const userData = await fetchUserProfile(user);
     let imageUrl = null;
 
-    // Subir imagen si existe
     if (imageInput.files.length > 0) {
       const file = imageInput.files[0];
-      const storageRef = firebase.storage().ref('community/' + user.uid + '/' + Date.now() + '_' + file.name);
-      const snapshot = await storageRef.put(file);
-      imageUrl = await snapshot.ref.getDownloadURL();
+      imageUrl = await uploadCommunityImage(file, user.uid);
     }
 
-    // Guardar nota en Firebase
     const noteData = {
-      content: content,
+      content,
       userId: user.uid,
       authorName: userData.username || 'Usuario',
       authorImage: userData.profileImage || 'https://via.placeholder.com/40',
-      imageUrl: imageUrl,
-      timestamp: Date.now(),
-      likes: 0
+      imageUrl
     };
 
-    await firebase.database().ref('communityNotes').push(noteData);
+    const response = await fetch('/.netlify/functions/community-notes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(noteData)
+    });
+
+    if (!response.ok) {
+      throw new Error('No se pudo guardar la nota');
+    }
     
     document.getElementById('note-content').value = '';
     imageInput.value = '';
@@ -65,14 +115,12 @@ async function loadNotes() {
   feedContainer.innerHTML = '<div class="p-4 text-center text-gray-500">Cargando...</div>';
 
   try {
-    const snapshot = await firebase.database().ref('communityNotes').orderByChild('timestamp').limitToLast(50).once('value');
-    const notes = [];
-    
-    snapshot.forEach(child => {
-      notes.push({ id: child.key, ...child.val() });
-    });
-
-    notes.reverse();
+    const response = await fetch('/.netlify/functions/community-notes?limit=50');
+    if (!response.ok) {
+      throw new Error('No se pudieron cargar las notas');
+    }
+    const data = await response.json();
+    const notes = data.notes || [];
     feedContainer.innerHTML = '';
 
     if (notes.length === 0) {
@@ -119,7 +167,17 @@ async function likeNote(noteId) {
     return;
   }
   
-  await firebase.database().ref('communityNotes/' + noteId + '/likes').transaction(likes => (likes || 0) + 1);
+  const response = await fetch('/.netlify/functions/community-notes', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'like', noteId })
+  });
+
+  if (!response.ok) {
+    alert('No se pudo registrar el like');
+    return;
+  }
+
   loadNotes();
 }
 
