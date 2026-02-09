@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Atenis - Historias y Relatos</title>
+  <title>Atenis - Historias</title>
   
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4653147807800151" crossorigin="anonymous"></script>
   <!-- reCAPTCHA v3 -->
@@ -272,51 +272,6 @@ body {
   transition: background-color 0.3s ease-in-out;
   border-top: 1px solid var(--uber-line);
   box-shadow: 0 -6px 20px rgba(17, 17, 17, 0.06);
-}
-
-/* Secciones estilo Wattpad */
-.home-section {
-  margin: 0 16px 20px;
-  padding: 16px 0 12px;
-  background: #ffffff;
-  border: 1px solid #ececec;
-  border-radius: 20px;
-  box-shadow: 0 6px 20px rgba(17, 17, 17, 0.04);
-}
-
-.home-section-header {
-  padding: 0 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.home-section-eyebrow {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #6b7280;
-  margin-bottom: 4px;
-}
-
-.home-section-content {
-  padding: 0 16px;
-}
-
-.home-section-action {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #111111;
-  background: #f2f2f2;
-  padding: 6px 12px;
-  border-radius: 9999px;
-  transition: background 0.2s ease-in-out;
-}
-
-.home-section-action:hover {
-  background: #e5e5e5;
 }
 
 /* --- MODALES CON Z-INDEX ALTO --- */
@@ -936,7 +891,6 @@ body {
       cursor: pointer;
     }
   </style>
-  <link rel="stylesheet" href="stories.css">
   <!-- Animación de Introducción Moderna Premium -->
   <script src="premium-intro.js"></script>
 
@@ -2671,28 +2625,6 @@ setInterval(checkScheduledChapters, 60000);
   </div>
 </section>
 
-<!-- Relatos Diarios - Estilo Instagram -->
-    <section class="px-4 py-3 bg-white border-b border-gray-100">
-        <div class="flex space-x-4 overflow-x-auto scrollbar-hide">
-            <!-- Tu relato -->
-            <div class="flex flex-col items-center flex-shrink-0 cursor-pointer" id="add-story-btn">
-                <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-yellow-400 via-red-500 to-pink-500 p-0.5">
-                    <div class="w-full h-full rounded-full bg-white flex items-center justify-center">
-                        <svg class="w-8 h-8 text-[#00A2FF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                        </svg>
-                    </div>
-                </div>
-                <span class="text-xs mt-1 text-gray-900 font-medium">Tu relato</span>
-            </div>
-            
-            <!-- Relatos de otros usuarios -->
-            <div id="stories" class="flex space-x-4">
-                <!-- Las historias se cargarán aquí -->
-            </div>
-        </div>
-    </section>
-    
     <style>
     .scrollbar-hide::-webkit-scrollbar {
         display: none;
@@ -4236,15 +4168,6 @@ function escapeHtml(text) {
           </div>
           <h3 class="text-lg font-bold text-[#00A2FF] mb-2">En Vivo</h3>
           <p class="text-sm text-gray-500">Transmitir ahora</p>
-        </div>
-
-        <!-- Relato -->
-        <div onclick="document.getElementById('add-story-btn').click()" class="bg-white rounded-xl p-6 cursor-pointer hover:shadow-lg transition-all border border-gray-200 text-center">
-          <div class="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 mx-auto border border-gray-200">
-            <img src="https://i.ibb.co/WpF2kzkt/IMG-7708.png" alt="Relato" class="w-10 h-10 rounded-full">
-          </div>
-          <h3 class="text-lg font-bold text-[#00A2FF] mb-2">Relato</h3>
-          <p class="text-sm text-gray-500">Historia de 24h</p>
         </div>
 
         <!-- Imagen IA -->
@@ -16465,51 +16388,6 @@ function closeZenvioStudio() {
 
 </body>
 
-<!-- Story Viewer Modal -->
-<div id="story-viewer">
-    <div class="story-content">
-        <!-- Story content will be loaded here -->
-    </div>
-    <button id="story-viewer-close" class="story-close">&times;</button>
-</div>
-
-<!-- Story Upload Modal -->
-<div id="story-upload-modal">
-    <div class="story-upload-content">
-        <div class="story-upload-header">
-            <button class="back-btn" id="story-upload-back">
-                <i class="fas fa-arrow-left"></i>
-            </button>
-            <h2 style="margin: 0;">Relato Diario</h2>
-            <div style="width: 40px;"></div>
-        </div>
-        
-        <div class="story-upload-preview">
-            <img src="" alt="Preview">
-        </div>
-        
-        <form id="story-upload-form">
-            <div class="file-input-wrapper">
-                <label for="story-file" class="file-input-label">
-                    <i class="fas fa-camera"></i>
-                    <span>Seleccionar imagen</span>
-                    <span class="file-hint">Toca para elegir una imagen para tu relato</span>
-                </label>
-                <input type="file" id="story-file" accept="image/*" required>
-            </div>
-            
-            <div class="upload-progress">
-                <div class="progress-bar-container">
-                    <div class="progress-bar"></div>
-                </div>
-                <div class="progress-text">Publicando...</div>
-            </div>
-            
-            <button type="submit">Publicar Relato</button>
-        </form>
-    </div>
-</div>
-
 <!-- Global Loading Spinner -->
 <div id="global-loader" class="fixed inset-0 bg-black bg-opacity-50 z-[9999] hidden items-center justify-center">
   <div class="loader"></div>
@@ -16592,7 +16470,6 @@ firebase.auth().onAuthStateChanged(user => {
 });
 </script>
 
-<script src="stories.js"></script>
 <script src="community-firebase.js"></script>
 <script src="search-firebase.js"></script>
 </body>
