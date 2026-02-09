@@ -60,7 +60,7 @@ npm install
 
 ## Endpoints en Vercel
 
-Las funciones se exponen bajo `/api/*` en Vercel.
+Las funciones se exponen bajo `/api/*` en Vercel y se enrutan mediante `/api/index` para mantener un único punto de entrada.
 
 ## Documentación
 
