@@ -240,6 +240,20 @@ body {
   margin-top: 4px;
 }
 
+.top-story-card {
+  width: 220px;
+}
+
+.top-story-poster {
+  height: 300px;
+}
+
+.top-story-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 /* Etiqueta de fundador */
 .founder-tag {
   font-size: 0.8rem;
@@ -2706,6 +2720,13 @@ setInterval(checkScheduledChapters, 60000);
     </style>
     
     <!-- SECCIONES DE CONTENIDO -->
+<section id="top-stories-section" class="mb-8">
+      <div class="flex justify-between items-center mb-4 px-4">
+      <h2 id="top-stories-title" class="text-base font-semibold text-gray-900">Mejores Historias</h2>
+      </div>
+      <div id="top-stories" class="flex space-x-4 overflow-x-auto px-4 scrollbar-hide"></div>
+</section>
+
 <section id="new-releases-section" class="mb-8">
       <div class="flex justify-between items-center mb-4 px-4">
       <h2 id="new-releases-title" class="text-base font-semibold text-gray-900">Nuevos Lanzamientos</h2>
@@ -10812,6 +10833,7 @@ async function likeNote(noteId) {
       btnIniciarSesion: "Iniciar Sesión",
       btnToggleAuth: "¿No tienes cuenta? Regístrate",
       btnVolver: "Volver",
+      topStories: "Mejores Historias",
       newReleases: "Nuevos Lanzamientos",
       top10: "Top 10",
       popular: "Más Populares",
@@ -10866,8 +10888,10 @@ async function likeNote(noteId) {
       editLater: "Puedes editar tu historia más tarde desde tu perfil."
     },
     en: {
+      topStories: "Top Stories",
       /* Traducciones en inglés */ },
     pt: {
+      topStories: "Melhores Histórias",
       /* Traducciones en portugués */ }
   };
 
@@ -10904,6 +10928,7 @@ async function likeNote(noteId) {
     document.getElementById('btn-volver-search').innerText = translations[currentLanguage].btnVolver;
     document.getElementById('btn-volver-profile').innerText = translations[currentLanguage].btnVolver;
     document.getElementById('btn-volver-author').innerText = translations[currentLanguage].btnVolver;
+    document.getElementById('top-stories-title').innerText = translations[currentLanguage].topStories;
     document.getElementById('new-releases-title').innerText = translations[currentLanguage].newReleases;
     document.getElementById('top10-title').innerText = translations[currentLanguage].top10;
     document.getElementById('popular-title').innerText = translations[currentLanguage].popular;
@@ -13809,6 +13834,46 @@ document.getElementById('category-filter').addEventListener('change', performRea
     }
   }
 
+  async function loadTopStories() {
+    const stories = await loadStoriesFromAWS();
+    const container = document.getElementById('top-stories');
+    container.innerHTML = '';
+
+    if (!stories.length) {
+      container.innerHTML = '<p class="text-gray-500">No hay historias disponibles</p>';
+      return;
+    }
+
+    const rankedStories = stories
+      .map(story => {
+        const ratingScore = (story.ratingValue || 0) * 100;
+        const likesScore = (story.likes || 0) * 10;
+        const viewsScore = story.views || 0;
+        return {
+          ...story,
+          engagementScore: ratingScore + likesScore + viewsScore
+        };
+      })
+      .sort((a, b) => b.engagementScore - a.engagementScore)
+      .slice(0, 10);
+
+    rankedStories.forEach(story => {
+      const card = document.createElement('div');
+      card.className = 'top-story-card flex-shrink-0 cursor-pointer';
+      card.onclick = () => openStoryDetail(story);
+      card.innerHTML = `
+        <div class="top-story-poster rounded-2xl overflow-hidden shadow-md transform transition-transform hover:scale-105">
+          <img src="${story.coverImage || '/api/placeholder/240/360'}" alt="${story.title}" class="top-story-image">
+        </div>
+        <div class="mt-2">
+          <h3 class="font-semibold text-sm truncate">${story.title}</h3>
+          <p class="text-xs text-gray-500 truncate">${story.username || story.author || story.userName || 'Autor desconocido'}</p>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+  }
+
   async function getUserRatingPreferences(userId) {
     const allStories = await loadStoriesFromAWS();
     const userRatings = {};
@@ -14077,6 +14142,7 @@ document.getElementById('category-filter').addEventListener('change', performRea
   async function initializeFeedSections() {
     try {
       await Promise.all([
+        loadTopStories(),
         loadSuggestedStories(),
         loadFeaturedAuthors(),
         loadTrendingStories(),
@@ -16553,6 +16619,7 @@ function closeZenvioStudio() {
       btnIniciarSesion: "Iniciar Sesión",
       btnToggleAuth: "¿No tienes cuenta? Regístrate",
       btnVolver: "Volver",
+      topStories: "Mejores Historias",
       newReleases: "Nuevos Lanzamientos",
       top10: "Top 10",
       popular: "Más Populares",
@@ -16608,11 +16675,13 @@ function closeZenvioStudio() {
     },
     en: {
       appName: "Zenvio",
+      topStories: "Top Stories",
       editLater: "You can edit your story later from your profile."
     },
     pt: {
       appName: "Zenvio",
       tagline: "Seu portal para histórias inesquecíveis",
+      topStories: "Melhores Histórias",
       editLater: "Você pode editar sua história mais tarde em seu perfil."
     }
   };
