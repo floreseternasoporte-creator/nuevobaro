@@ -12338,12 +12338,27 @@ async function likeNote(noteId) {
 
   detachSearchStoriesListener();
   searchStoriesRef = firebase.database().ref('stories');
-  searchStoriesHandler = snapshot => {
+  searchStoriesHandler = async snapshot => {
     const books = [];
+    const firebaseStories = [];
     snapshot.forEach(child => {
       const story = child.val();
-      const storyTimestamp = Number(story.timestamp);
-      const isRecent = Number.isFinite(storyTimestamp) && storyTimestamp >= recentThreshold;
+      firebaseStories.push({ id: story.id || child.key, ...story });
+    });
+
+    const awsStories = await loadStoriesFromAWS();
+    const merged = new Map();
+    awsStories.forEach((story, index) => merged.set(getStoryKey(story, index), story));
+    firebaseStories.forEach((story, index) => {
+      const key = getStoryKey(story, index);
+      if (!merged.has(key)) {
+        merged.set(key, story);
+      }
+    });
+
+    merged.forEach(story => {
+      const storyTimestamp = getStoryTimestamp(story);
+      const isRecent = storyTimestamp >= recentThreshold;
       const matchesQuery = story.title && story.title.toLowerCase().includes(query);
       const matchesCategory = !category
         || (category === 'recent' && isRecent)
@@ -12375,7 +12390,6 @@ async function likeNote(noteId) {
   }
 }
 
-document.getElementById('search-input').addEventListener('input', performRealTimeSearch);
 document.getElementById('category-filter').addEventListener('change', performRealTimeSearch);
   async function performSearch(query) {
     await new Promise(resolve => setTimeout(resolve, 3000));
@@ -13750,7 +13764,7 @@ document.getElementById('category-filter').addEventListener('change', performRea
       snapshot.forEach(child => {
         stories.push(child.val());
       });
-      let newReleases = stories.sort((a, b) => b.createdAt - a.createdAt);
+      let newReleases = stories.sort((a, b) => getStoryTimestamp(b) - getStoryTimestamp(a));
       renderStories(newReleases, 'new-releases', false);
       let top10 = stories.sort((a, b) => b.views - a.views).slice(0, 10);
       renderStories(top10, 'top10', false);
@@ -13822,16 +13836,67 @@ document.getElementById('category-filter').addEventListener('change', performRea
   }
   
   /*********************** FUNCIONES AUXILIARES PARA CARGAR HISTORIAS DESDE AWS S3 **************************/
-  
-  async function loadStoriesFromAWS() {
+  function getStoryTimestamp(story) {
+    const raw = story.createdAt || story.timestamp;
+    if (!raw) return 0;
+    const parsed = typeof raw === 'string' ? Date.parse(raw) : Number(raw);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  function getStoryKey(story, fallbackIndex) {
+    return (
+      story.id ||
+      story.storyId ||
+      story.key ||
+      `${story.userId || 'user'}-${story.title || 'story'}-${getStoryTimestamp(story)}-${fallbackIndex}`
+    );
+  }
+
+  async function loadStoriesFromFirebase() {
     try {
-      const response = await fetch('/.netlify/functions/get-stories');
-      const data = await response.json();
-      return data.stories || [];
+      const snapshot = await firebase.database().ref('stories').once('value');
+      const stories = [];
+      snapshot.forEach(child => {
+        const story = child.val() || {};
+        stories.push({ id: story.id || child.key, ...story });
+      });
+      return stories;
     } catch (error) {
-      console.error('Error loading stories from AWS:', error);
+      console.error('Error loading stories from Firebase:', error);
       return [];
     }
+  }
+  
+  async function loadStoriesFromAWS() {
+    let awsStories = [];
+    try {
+      const response = await fetch('/.netlify/functions/get-stories');
+      if (!response.ok) {
+        throw new Error(`AWS fetch failed with status ${response.status}`);
+      }
+      const data = await response.json();
+      awsStories = data.stories || [];
+    } catch (error) {
+      console.error('Error loading stories from AWS:', error);
+    }
+
+    const firebaseStories = await loadStoriesFromFirebase();
+    if (!awsStories.length) {
+      return firebaseStories;
+    }
+
+    const merged = new Map();
+    awsStories.forEach((story, index) => {
+      merged.set(getStoryKey(story, index), story);
+    });
+    firebaseStories.forEach((story, index) => {
+      const key = getStoryKey(story, index);
+      if (!merged.has(key)) {
+        merged.set(key, story);
+      }
+    });
+
+    return Array.from(merged.values());
   }
 
   async function loadTopStories() {
@@ -14096,7 +14161,7 @@ document.getElementById('category-filter').addEventListener('change', performRea
     const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000);
     
     const trending = stories
-      .filter(story => story.timestamp > sevenDaysAgo)
+      .filter(story => getStoryTimestamp(story) > sevenDaysAgo)
       .map(story => ({
         ...story,
         trendingScore: (story.views || 0) * 2 + (story.ratingValue || 0) * 100
