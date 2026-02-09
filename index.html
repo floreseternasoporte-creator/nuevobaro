@@ -911,14 +911,14 @@ body {
     });
     /* TEMA PERMANENTE EN MODO CLARO */
     function setLightTheme() {
-      const bg = "#ffffff";
-      const fontColor = "#000000";
+      const bg = "#f6f6f6";
+      const fontColor = "#111111";
       document.body.style.backgroundColor = bg;
       document.body.style.color = fontColor;
       updateSectionThemes(bg, fontColor);
       const bottomNav = document.getElementById('bottom-nav');
       if (bottomNav) {
-        bottomNav.style.backgroundColor = "rgba(255,255,255,0.9)";
+        bottomNav.style.backgroundColor = "rgba(255,255,255,0.92)";
       }
     }
 
@@ -4226,17 +4226,17 @@ function escapeHtml(text) {
 
 
 
-<!-- Search View - Estilo Instagram -->
-<div id="search-view" class="fixed inset-0 bg-white overflow-y-auto hidden z-50">
-  <div class="sticky top-0 bg-white border-b border-gray-200 px-4 py-2 z-10">
+<!-- Search View - Estilo Uber -->
+<div id="search-view" class="fixed inset-0 bg-uber-surface overflow-y-auto hidden z-50">
+  <div class="sticky top-0 bg-white border-b border-uber-line px-4 py-3 z-10 shadow-uber-header">
     <div class="relative">
-      <input id="search-input" type="text" placeholder="Buscar" class="w-full pl-10 pr-10 py-2 bg-gray-100 rounded-lg text-sm focus:outline-none" oninput="handleSearchInput()">
-      <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <input id="search-input" type="text" placeholder="Buscar" class="w-full pl-11 pr-12 py-3 bg-uber-field rounded-full text-base font-medium text-uber-black placeholder-uber-muted focus:outline-none focus:ring-2 focus:ring-uber-black/10" oninput="handleSearchInput()">
+      <svg class="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-uber-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <circle cx="11" cy="11" r="8" stroke-width="2"/>
         <path d="m21 21-4.35-4.35" stroke-width="2"/>
       </svg>
-      <button id="clear-search-btn" class="absolute right-3 top-1/2 transform -translate-y-1/2 hidden" onclick="clearSearchInput()">
-        <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+      <button id="clear-search-btn" class="absolute right-4 top-1/2 transform -translate-y-1/2 hidden bg-white text-uber-muted p-1 rounded-full shadow-uber-chip" onclick="clearSearchInput()">
+        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
           <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
         </svg>
       </button>
@@ -4255,17 +4255,17 @@ function escapeHtml(text) {
   </div>
 
   <div class="p-4">
-    <div class="flex gap-2 overflow-x-auto pb-3 mb-4">
-      <button type="button" class="category-chip active" data-value="">Todas</button>
-      <button type="button" class="category-chip" data-value="recent">Recientes</button>
-      <button type="button" class="category-chip" data-value="aventura">Aventura</button>
-      <button type="button" class="category-chip" data-value="romance">Romance</button>
-      <button type="button" class="category-chip" data-value="misterio">Misterio</button>
-      <button type="button" class="category-chip" data-value="fantasia">Fantasía</button>
-      <button type="button" class="category-chip" data-value="terror">Terror</button>
-      <button type="button" class="category-chip" data-value="ciencia_ficcion">Ciencia Ficción</button>
-      <button type="button" class="category-chip" data-value="drama">Drama</button>
-      <button type="button" class="category-chip" data-value="comedia">Comedia</button>
+    <div class="flex gap-2 overflow-x-auto pb-3 mb-4 uber-chip-row">
+      <button type="button" class="category-chip uber-chip active" data-value="">Todas</button>
+      <button type="button" class="category-chip uber-chip" data-value="recent">Recientes</button>
+      <button type="button" class="category-chip uber-chip" data-value="aventura">Aventura</button>
+      <button type="button" class="category-chip uber-chip" data-value="romance">Romance</button>
+      <button type="button" class="category-chip uber-chip" data-value="misterio">Misterio</button>
+      <button type="button" class="category-chip uber-chip" data-value="fantasia">Fantasía</button>
+      <button type="button" class="category-chip uber-chip" data-value="terror">Terror</button>
+      <button type="button" class="category-chip uber-chip" data-value="ciencia_ficcion">Ciencia Ficción</button>
+      <button type="button" class="category-chip uber-chip" data-value="drama">Drama</button>
+      <button type="button" class="category-chip uber-chip" data-value="comedia">Comedia</button>
     </div>
     <select id="category-filter" class="hidden" aria-hidden="true">
       <option value="">Todas</option>
@@ -4279,9 +4279,9 @@ function escapeHtml(text) {
       <option value="drama">Drama</option>
       <option value="comedia">Comedia</option>
     </select>
-    <div class="flex border-b border-gray-200 mb-4">
-      <button onclick="switchSearchTab('stories')" class="flex-1 py-3 text-center font-semibold border-b-2 border-gray-900" id="search-stories-tab">Historias</button>
-      <button onclick="switchSearchTab('authors')" class="flex-1 py-3 text-center font-semibold border-b-2 border-transparent text-gray-400" id="search-authors-tab">Autores</button>
+    <div class="flex rounded-full bg-white border border-uber-line mb-5 p-1 shadow-uber-chip">
+      <button onclick="switchSearchTab('stories')" class="flex-1 py-2 text-center text-sm font-semibold rounded-full bg-uber-black text-white transition-colors" id="search-stories-tab">Historias</button>
+      <button onclick="switchSearchTab('authors')" class="flex-1 py-2 text-center text-sm font-semibold rounded-full text-uber-muted transition-colors" id="search-authors-tab">Autores</button>
     </div>
 
     <div id="search-stories-section">
@@ -4475,13 +4475,13 @@ function switchSearchTab(tab) {
   const authorsSection = document.getElementById('search-authors-section');
   
   if (tab === 'stories') {
-    storiesTab.className = 'flex-1 py-3 text-center font-semibold border-b-2 border-gray-900';
-    authorsTab.className = 'flex-1 py-3 text-center font-semibold border-b-2 border-transparent text-gray-400';
+    storiesTab.className = 'flex-1 py-2 text-center text-sm font-semibold rounded-full bg-uber-black text-white transition-colors';
+    authorsTab.className = 'flex-1 py-2 text-center text-sm font-semibold rounded-full text-uber-muted transition-colors';
     storiesSection.classList.remove('hidden');
     authorsSection.classList.add('hidden');
   } else {
-    storiesTab.className = 'flex-1 py-3 text-center font-semibold border-b-2 border-transparent text-gray-400';
-    authorsTab.className = 'flex-1 py-3 text-center font-semibold border-b-2 border-gray-900';
+    storiesTab.className = 'flex-1 py-2 text-center text-sm font-semibold rounded-full text-uber-muted transition-colors';
+    authorsTab.className = 'flex-1 py-2 text-center text-sm font-semibold rounded-full bg-uber-black text-white transition-colors';
     storiesSection.classList.add('hidden');
     authorsSection.classList.remove('hidden');
   }
@@ -5575,6 +5575,176 @@ function clearSearchInput() {
     background: #00A2FF;
     color: white;
     border-color: #00A2FF;
+  }
+
+  .bg-uber-surface {
+    background-color: #f6f6f6;
+  }
+
+  .bg-uber-field {
+    background-color: #f2f2f2;
+  }
+
+  .bg-uber-black {
+    background-color: #111111;
+  }
+
+  .border-uber-line {
+    border-color: #e6e6e6;
+  }
+
+  .text-uber-black {
+    color: #111111;
+  }
+
+  .text-uber-muted {
+    color: #6b7280;
+  }
+
+  .placeholder-uber-muted::placeholder {
+    color: #9ca3af;
+  }
+
+  .shadow-uber-header {
+    box-shadow: 0 1px 0 rgba(17, 17, 17, 0.06);
+  }
+
+  .shadow-uber-chip {
+    box-shadow: 0 2px 8px rgba(17, 17, 17, 0.06);
+  }
+
+  .uber-chip-row::-webkit-scrollbar {
+    display: none;
+  }
+
+  .uber-chip-row {
+    scrollbar-width: none;
+  }
+
+  .uber-chip {
+    border-radius: 999px;
+    border-color: #e6e6e6;
+    color: #111111;
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(17, 17, 17, 0.06);
+  }
+
+  .uber-chip:hover {
+    border-color: #111111;
+    color: #111111;
+  }
+
+  .uber-chip.active {
+    background: #111111;
+    border-color: #111111;
+    color: #ffffff;
+  }
+
+  :root {
+    --uber-black: #111111;
+    --uber-surface: #f6f6f6;
+    --uber-field: #f2f2f2;
+    --uber-line: #e6e6e6;
+    --uber-muted: #6b7280;
+  }
+
+  body {
+    background-color: var(--uber-surface);
+    color: var(--uber-black);
+  }
+
+  .bg-gray-50,
+  .bg-gray-100 {
+    background-color: var(--uber-surface) !important;
+  }
+
+  .bg-gray-200,
+  .bg-gray-300 {
+    background-color: var(--uber-field) !important;
+  }
+
+  .border-gray-100,
+  .border-gray-200,
+  .border-gray-300 {
+    border-color: var(--uber-line) !important;
+  }
+
+  .text-gray-400 {
+    color: #9ca3af !important;
+  }
+
+  .text-gray-500 {
+    color: var(--uber-muted) !important;
+  }
+
+  .text-gray-600 {
+    color: #4b5563 !important;
+  }
+
+  .text-gray-700,
+  .text-gray-800,
+  .text-gray-900 {
+    color: var(--uber-black) !important;
+  }
+
+  .bg-blue-500,
+  .bg-blue-600,
+  .bg-blue-700,
+  .bg-indigo-500,
+  .bg-purple-600,
+  .bg-green-500,
+  .bg-green-600,
+  .bg-red-500,
+  .bg-red-600 {
+    background-color: var(--uber-black) !important;
+  }
+
+  .text-blue-500,
+  .text-blue-600,
+  .text-indigo-500,
+  .text-purple-600,
+  .text-green-500,
+  .text-red-500 {
+    color: var(--uber-black) !important;
+  }
+
+  .border-blue-500,
+  .border-blue-600,
+  .border-indigo-500,
+  .border-purple-600,
+  .border-green-500,
+  .border-red-500 {
+    border-color: var(--uber-black) !important;
+  }
+
+  .from-blue-500,
+  .from-indigo-500,
+  .from-purple-600,
+  .from-green-500,
+  .from-red-500 {
+    --tw-gradient-from: var(--uber-black) !important;
+    --tw-gradient-to: rgba(17, 17, 17, 0) !important;
+  }
+
+  .to-purple-600,
+  .to-indigo-600,
+  .to-blue-600,
+  .to-green-600,
+  .to-red-600 {
+    --tw-gradient-to: var(--uber-black) !important;
+  }
+
+  input,
+  textarea,
+  select {
+    border-color: var(--uber-line);
+    background-color: var(--uber-field);
+    color: var(--uber-black);
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: #9ca3af;
   }
 
   .community-tab {
