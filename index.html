@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Atenis - Historias y Relatos</title>
+  <title>Atenis - Historias</title>
   
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4653147807800151" crossorigin="anonymous"></script>
   <!-- reCAPTCHA v3 -->
@@ -242,10 +242,17 @@ body {
 
 .top-story-card {
   width: 220px;
+  background: var(--uber-surface);
+  border: 1px solid var(--uber-line);
+  border-radius: 18px;
+  padding: 10px;
+  box-shadow: 0 8px 20px rgba(17, 17, 17, 0.06);
 }
 
 .top-story-poster {
   height: 300px;
+  border-radius: 14px;
+  overflow: hidden;
 }
 
 .top-story-image {
@@ -266,11 +273,12 @@ body {
 
 /* Barra inferior con efecto difuminado */
 #bottom-nav {
-  background-color: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background-color: rgba(246, 246, 246, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   transition: background-color 0.3s ease-in-out;
-  border-top: 1px solid #e6e6e6;
+  border-top: 1px solid var(--uber-line);
+  box-shadow: 0 -6px 20px rgba(17, 17, 17, 0.06);
 }
 
 /* --- MODALES CON Z-INDEX ALTO --- */
@@ -325,6 +333,11 @@ body {
   flex-shrink: 0;
   width: 100%;
   max-width: 250px;
+  background: var(--uber-surface);
+  border: 1px solid var(--uber-line);
+  border-radius: 18px;
+  padding: 10px;
+  box-shadow: 0 8px 20px rgba(17, 17, 17, 0.06);
 }
 
 @media (max-width: 640px) {
@@ -337,9 +350,23 @@ body {
   position: relative;
   width: 100%;
   padding-top: 133.33%;
-  border-radius: 12px;
+  border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 6px 16px rgba(17, 17, 17, 0.08);
+  border: 1px solid rgba(17, 17, 17, 0.08);
+}
+
+.story-placeholder .story-cover-container,
+.top-story-placeholder .top-story-poster {
+  background: var(--uber-field);
+}
+
+.story-placeholder .placeholder-line,
+.top-story-placeholder .placeholder-line {
+  height: 10px;
+  background: var(--uber-line);
+  border-radius: 9999px;
+  margin-top: 8px;
 }
 
 .story-cover-image {
@@ -890,7 +917,6 @@ body {
       cursor: pointer;
     }
   </style>
-  <link rel="stylesheet" href="stories.css">
   <!-- Animación de Introducción Moderna Premium -->
   <script src="premium-intro.js"></script>
 
@@ -2625,28 +2651,6 @@ setInterval(checkScheduledChapters, 60000);
   </div>
 </section>
 
-<!-- Relatos Diarios - Estilo Instagram -->
-    <section class="px-4 py-3 bg-white border-b border-gray-100">
-        <div class="flex space-x-4 overflow-x-auto scrollbar-hide">
-            <!-- Tu relato -->
-            <div class="flex flex-col items-center flex-shrink-0 cursor-pointer" id="add-story-btn">
-                <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-yellow-400 via-red-500 to-pink-500 p-0.5">
-                    <div class="w-full h-full rounded-full bg-white flex items-center justify-center">
-                        <svg class="w-8 h-8 text-[#00A2FF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                        </svg>
-                    </div>
-                </div>
-                <span class="text-xs mt-1 text-gray-900 font-medium">Tu relato</span>
-            </div>
-            
-            <!-- Relatos de otros usuarios -->
-            <div id="stories" class="flex space-x-4">
-                <!-- Las historias se cargarán aquí -->
-            </div>
-        </div>
-    </section>
-    
     <style>
     .scrollbar-hide::-webkit-scrollbar {
         display: none;
@@ -2765,11 +2769,29 @@ setInterval(checkScheduledChapters, 60000);
 <script>
 function loadFollowingStories() {
   const user = firebase.auth().currentUser;
-  if (!user) return;
+  const carouselSection = document.getElementById('stories-carousel');
+  const followingStoriesDiv = document.getElementById('following-stories');
+
+  if (!user) {
+    if (carouselSection) carouselSection.classList.add('hidden');
+    if (followingStoriesDiv) followingStoriesDiv.innerHTML = '';
+    return;
+  }
+
+  if (carouselSection) carouselSection.classList.remove('hidden');
 
   firebase.database().ref('following/' + user.uid).once('value').then(followingSnap => {
-    const followingStoriesDiv = document.getElementById('following-stories');
+    if (!followingStoriesDiv) return;
     followingStoriesDiv.innerHTML = '';
+
+    if (!followingSnap.exists()) {
+      followingStoriesDiv.innerHTML = `
+        <div class="text-sm text-gray-500 px-4 py-2">
+          Sigue autores para ver sus historias recientes.
+        </div>
+      `;
+      return;
+    }
 
     followingSnap.forEach(following => {
       const followedUserId = following.key;
@@ -2926,37 +2948,37 @@ firebase.auth().onAuthStateChanged(user => {
   </div>
 
   <!-- BOTTOM NAVIGATION MINIMALISTA -->
-  <div id="bottom-nav" class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 transition-all duration-300 z-[100]">
+  <div id="bottom-nav" class="fixed bottom-0 left-0 right-0 bg-uber-surface border-t border-uber-line transition-all duration-300 z-[100]">
     <div class="grid grid-cols-5 px-2 py-2">
-      <button id="nav-home" data-section="home" class="nav-button flex flex-col items-center py-2 px-1 rounded-lg transition-colors duration-200 active">
+      <button id="nav-home" data-section="home" class="nav-button flex flex-col items-center py-2 px-1 rounded-xl transition-colors duration-200 active">
         <svg class="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 24 24">
           <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
         </svg>
         <span class="text-xs font-medium">Inicio</span>
       </button>
-      <button id="nav-search" data-section="search" class="nav-button flex flex-col items-center py-2 px-1 rounded-lg transition-colors duration-200">
+      <button id="nav-search" data-section="search" class="nav-button flex flex-col items-center py-2 px-1 rounded-xl transition-colors duration-200">
         <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <circle cx="11" cy="11" r="8" />
           <path d="m21 21-4.35-4.35" />
         </svg>
         <span class="text-xs font-medium">Buscar</span>
       </button>
-      <button id="nav-create" data-section="create" class="nav-button flex flex-col items-center py-2 px-1 rounded-lg transition-colors duration-200">
-        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center mb-1">
+      <button id="nav-create" data-section="create" class="nav-button flex flex-col items-center py-2 px-1 rounded-xl transition-colors duration-200">
+        <div class="w-9 h-9 bg-uber-black rounded-full flex items-center justify-center mb-1 shadow-uber-chip">
           <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
           </svg>
         </div>
         <span class="text-xs font-medium">Crear</span>
       </button>
-      <button id="nav-community" data-section="community" class="nav-button flex flex-col items-center py-2 px-1 rounded-lg transition-colors duration-200">
+      <button id="nav-community" data-section="community" class="nav-button flex flex-col items-center py-2 px-1 rounded-xl transition-colors duration-200">
         <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
           <circle cx="9" cy="7" r="4" />
         </svg>
         <span class="text-xs font-medium">Comunidad</span>
       </button>
-      <button id="nav-profile" data-section="profile" class="nav-button flex flex-col items-center py-2 px-1 rounded-lg transition-colors duration-200">
+      <button id="nav-profile" data-section="profile" class="nav-button flex flex-col items-center py-2 px-1 rounded-xl transition-colors duration-200">
         <img id="bottom-nav-profile-pic" src="https://via.placeholder.com/150" class="w-6 h-6 rounded-full object-cover mb-1" alt="Perfil">
         <span class="text-xs font-medium">Perfil</span>
       </button>
@@ -2965,19 +2987,28 @@ firebase.auth().onAuthStateChanged(user => {
 
   <style>
     .nav-button {
-      color: #6b7280;
+      color: var(--uber-muted);
+      background: transparent;
+      box-shadow: none;
+      filter: none;
     }
     
     .nav-button.active {
-      color: #3b82f6;
+      color: var(--uber-black);
     }
     
     .nav-button:hover {
-      background-color: #f3f4f6;
+      background-color: var(--uber-field);
     }
     
     .nav-button.active:hover {
-      background-color: #dbeafe;
+      background-color: var(--uber-line);
+    }
+
+    #bottom-nav {
+      backdrop-filter: blur(14px);
+      background: rgba(246, 246, 246, 0.96);
+      box-shadow: 0 -6px 20px rgba(17, 17, 17, 0.06);
     }
     
     #bottom-nav.hide {
@@ -4141,15 +4172,6 @@ function escapeHtml(text) {
           </div>
           <h3 class="text-lg font-bold text-[#00A2FF] mb-2">En Vivo</h3>
           <p class="text-sm text-gray-500">Transmitir ahora</p>
-        </div>
-
-        <!-- Relato -->
-        <div onclick="document.getElementById('add-story-btn').click()" class="bg-white rounded-xl p-6 cursor-pointer hover:shadow-lg transition-all border border-gray-200 text-center">
-          <div class="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 mx-auto border border-gray-200">
-            <img src="https://i.ibb.co/WpF2kzkt/IMG-7708.png" alt="Relato" class="w-10 h-10 rounded-full">
-          </div>
-          <h3 class="text-lg font-bold text-[#00A2FF] mb-2">Relato</h3>
-          <p class="text-sm text-gray-500">Historia de 24h</p>
         </div>
 
         <!-- Imagen IA -->
@@ -6174,20 +6196,20 @@ function clearSearchInput() {
   });
 </script>
 <!-- PERFIL PROPIO CON SUBIDA DE FOTO EN TIEMPO REAL -->
-<div id="profile-view" class="fixed inset-0 overflow-y-auto z-40 hidden bg-white text-black scrollbar-hide">
+<div id="profile-view" class="fixed inset-0 overflow-y-auto z-40 hidden bg-uber-surface text-uber-black scrollbar-hide">
   <!-- Vista móvil -->
   <div class="block lg:hidden">
     <!-- Header limpio -->
-    <div class="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 z-10">
+    <div class="sticky top-0 bg-uber-surface border-b border-uber-line px-4 py-3 z-10 shadow-uber-header">
       <div class="flex items-center justify-between">
         <button onclick="openHome()" class="p-2">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-uber-black" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <h2 id="profile-username-header" class="text-base font-semibold text-gray-900">@nombre_usuario</h2>
+        <h2 id="profile-username-header" class="text-base font-semibold text-uber-black">@nombre_usuario</h2>
         <button onclick="openMenuModal()" class="p-2">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-uber-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
@@ -6199,34 +6221,34 @@ function clearSearchInput() {
       <!-- Sección de perfil -->
       <div class="mb-4">
         <div class="flex items-start mb-4">
-          <img id="profile-image" src="https://via.placeholder.com/150" class="w-20 h-20 rounded-full object-cover mr-4" style="border: 2px solid #00A2FF;" alt="Foto de perfil">
+          <img id="profile-image" src="https://via.placeholder.com/150" class="w-20 h-20 rounded-full object-cover mr-4 border-2 border-uber-black" alt="Foto de perfil">
           
           <div class="flex-1">
             <div class="flex justify-around mb-3">
               <button onclick="openMyStoriesModal()" class="text-center">
                 <div id="profile-stories-count" class="font-semibold">0</div>
-                <div class="text-xs text-gray-500">Historias</div>
+                <div class="text-xs text-uber-muted">Historias</div>
               </button>
               <button onclick="openMyFollowersModal()" class="text-center">
                 <div id="profile-followers" class="font-semibold">0</div>
-                <div class="text-xs text-gray-500">Seguidores</div>
+                <div class="text-xs text-uber-muted">Seguidores</div>
               </button>
               <button onclick="openMyFollowingModal()" class="text-center">
                 <div id="profile-following" class="font-semibold">0</div>
-                <div class="text-xs text-gray-500">Siguiendo</div>
+                <div class="text-xs text-uber-muted">Siguiendo</div>
               </button>
             </div>
           </div>
         </div>
         
         <h2 id="profile-username" class="font-semibold mb-1">@nombre_usuario</h2>
-        <p id="profile-bio" class="text-sm text-gray-600 mb-3"></p>
+        <p id="profile-bio" class="text-sm text-uber-muted mb-3"></p>
         
         <div class="flex space-x-2">
-          <button onclick="openProfileEdit()" class="flex-1 bg-gray-100 text-black text-sm font-semibold py-2 rounded-lg">
+          <button onclick="openProfileEdit()" class="flex-1 bg-uber-black text-white text-sm font-semibold py-2 rounded-full shadow-uber-chip">
             Editar perfil
           </button>
-          <button onclick="openQRModal()" class="bg-gray-100 text-black text-sm font-semibold px-4 py-2 rounded-lg">
+          <button onclick="openQRModal()" class="bg-uber-field text-uber-black text-sm font-semibold px-4 py-2 rounded-full">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
             </svg>
@@ -6237,22 +6259,22 @@ function clearSearchInput() {
 
 
       <!-- Historias del usuario -->
-      <div class="border-t border-gray-200 pt-4">
+      <div class="border-t border-uber-line pt-4">
         <div id="user-stories" class="grid grid-cols-2 gap-3"></div>
       </div>
     </div>
   </div>
 
   <!-- Vista desktop inspirada en Inkspired -->
-  <div class="hidden lg:block relative min-h-screen">
+  <div class="hidden lg:block relative min-h-screen bg-uber-surface">
     <!-- Header de perfil con fondo gradiente -->
-    <div class="relative h-64 bg-gradient-to-r from-[#00A2FF] via-[#ff4757] to-[#00A2FF] overflow-hidden">
+    <div class="relative h-64 overflow-hidden" style="background: linear-gradient(135deg, #111111, #1f1f1f);">
       <!-- Patrón de fondo -->
       <div class="absolute inset-0 bg-black bg-opacity-20"></div>
       
       <!-- Botón volver y opciones -->
       <div class="absolute top-6 left-6 right-6 flex justify-between items-center z-10">
-        <button onclick="openHome()" class="text-white font-medium flex items-center hover:bg-white hover:bg-opacity-20 px-3 py-2 rounded-lg transition-all">
+        <button onclick="openHome()" class="text-white font-medium flex items-center hover:bg-white hover:bg-opacity-10 px-3 py-2 rounded-lg transition-all">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <polyline points="15 18 9 12 15 6" />
           </svg>
@@ -6260,13 +6282,13 @@ function clearSearchInput() {
         </button>
         
         <div class="flex items-center space-x-3">
-          <button onclick="openProfileEdit()" class="bg-white text-[#00A2FF] px-4 py-2 rounded-lg font-medium hover:bg-gray-100 transition-all flex items-center">
+          <button onclick="openProfileEdit()" class="bg-white text-uber-black px-4 py-2 rounded-full font-medium hover:bg-uber-field transition-all flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
             </svg>
             Editar perfil
           </button>
-          <button onclick="openMenuModal()" class="text-white hover:bg-white hover:bg-opacity-20 p-2 rounded-lg transition-all">
+          <button onclick="openMenuModal()" class="text-white hover:bg-white hover:bg-opacity-10 p-2 rounded-lg transition-all">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
@@ -6290,7 +6312,7 @@ function clearSearchInput() {
           <div class="flex-1">
             <div class="flex items-center mb-2">
               <h1 id="profile-username-desktop" class="text-3xl font-bold text-white mr-3">@nombre_usuario</h1>
-              <button onclick="openProfileEdit()" class="text-white hover:bg-white hover:bg-opacity-20 p-2 rounded-lg transition-all">
+              <button onclick="openProfileEdit()" class="text-white hover:bg-white hover:bg-opacity-10 p-2 rounded-lg transition-all">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
@@ -14239,6 +14261,10 @@ document.getElementById('category-filter').addEventListener('change', performRea
   function renderStories(stories, elementId, editMode) {
     const container = document.getElementById(elementId);
     container.innerHTML = '';
+    if (!stories.length) {
+      renderStoryPlaceholders(container);
+      return;
+    }
     stories.forEach(story => {
       if (story.blocked) return;
       const storyCard = document.createElement('div');
@@ -14350,13 +14376,41 @@ document.getElementById('category-filter').addEventListener('change', performRea
     return Array.from(merged.values());
   }
 
+  function renderStoryPlaceholders(container, count = 6) {
+    container.innerHTML = '';
+    for (let i = 0; i < count; i += 1) {
+      const card = document.createElement('div');
+      card.className = 'story-card story-placeholder flex-shrink-0';
+      card.innerHTML = `
+        <div class="story-cover-container"></div>
+        <div class="placeholder-line" style="width: 70%;"></div>
+        <div class="placeholder-line" style="width: 40%;"></div>
+      `;
+      container.appendChild(card);
+    }
+  }
+
+  function renderTopStoryPlaceholders(container, count = 4) {
+    container.innerHTML = '';
+    for (let i = 0; i < count; i += 1) {
+      const card = document.createElement('div');
+      card.className = 'top-story-card top-story-placeholder flex-shrink-0';
+      card.innerHTML = `
+        <div class="top-story-poster"></div>
+        <div class="placeholder-line" style="width: 75%;"></div>
+        <div class="placeholder-line" style="width: 45%;"></div>
+      `;
+      container.appendChild(card);
+    }
+  }
+
   async function loadTopStories() {
     const stories = await loadStoriesFromAWS();
     const container = document.getElementById('top-stories');
     container.innerHTML = '';
 
     if (!stories.length) {
-      container.innerHTML = '<p class="text-gray-500">No hay historias disponibles</p>';
+      renderTopStoryPlaceholders(container);
       return;
     }
 
@@ -14486,7 +14540,7 @@ document.getElementById('category-filter').addEventListener('change', performRea
     container.innerHTML = '';
     
     if (!stories.length) {
-      container.innerHTML = '<p class="text-gray-500">No hay historias disponibles</p>';
+      renderStoryPlaceholders(container);
       return;
     }
     
@@ -14541,6 +14595,10 @@ document.getElementById('category-filter').addEventListener('change', performRea
     const stories = await loadStoriesFromAWS();
     const container = document.getElementById('featured-authors');
     container.innerHTML = '';
+    if (!stories.length) {
+      renderStoryPlaceholders(container, 4);
+      return;
+    }
     
     const authorCounts = {};
     stories.forEach(story => {
@@ -14605,8 +14663,11 @@ document.getElementById('category-filter').addEventListener('change', performRea
     const stories = await loadStoriesFromAWS();
     const container = document.getElementById('trending-stories');
     container.innerHTML = '';
-    
-    if (!stories.length) return;
+
+    if (!stories.length) {
+      renderStoryPlaceholders(container);
+      return;
+    }
     
     const now = Date.now();
     const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000);
@@ -14629,7 +14690,12 @@ document.getElementById('category-filter').addEventListener('change', performRea
     const stories = await loadStoriesFromAWS();
     const container = document.getElementById('mystery-stories');
     container.innerHTML = '';
-    
+
+    if (!stories.length) {
+      renderStoryPlaceholders(container);
+      return;
+    }
+
     const mysteryStories = stories
       .filter(story => story.category === 'misterio')
       .sort((a, b) => (b.views || 0) - (a.views || 0))
@@ -14644,7 +14710,11 @@ document.getElementById('category-filter').addEventListener('change', performRea
     const stories = await loadStoriesFromAWS();
     const container = document.getElementById('adventure-stories');
     container.innerHTML = '';
-    
+    if (!stories.length) {
+      renderStoryPlaceholders(container);
+      return;
+    }
+
     const adventureStories = stories
       .filter(story => story.category === 'aventura')
       .sort((a, b) => (b.ratingValue || 0) - (a.ratingValue || 0))
@@ -15337,7 +15407,7 @@ document.getElementById('category-filter').addEventListener('change', performRea
     container.innerHTML = '';
     
     if (!stories.length) {
-      container.innerHTML = '<p class="text-gray-500">No hay historias disponibles</p>';
+      renderStoryPlaceholders(container);
       return;
     }
     
@@ -15392,6 +15462,10 @@ document.getElementById('category-filter').addEventListener('change', performRea
     const stories = await loadStoriesFromAWS();
     const container = document.getElementById('featured-authors');
     container.innerHTML = '';
+    if (!stories.length) {
+      renderStoryPlaceholders(container, 4);
+      return;
+    }
     
     const authorCounts = {};
     stories.forEach(story => {
@@ -16370,51 +16444,6 @@ function closeZenvioStudio() {
 
 </body>
 
-<!-- Story Viewer Modal -->
-<div id="story-viewer">
-    <div class="story-content">
-        <!-- Story content will be loaded here -->
-    </div>
-    <button id="story-viewer-close" class="story-close">&times;</button>
-</div>
-
-<!-- Story Upload Modal -->
-<div id="story-upload-modal">
-    <div class="story-upload-content">
-        <div class="story-upload-header">
-            <button class="back-btn" id="story-upload-back">
-                <i class="fas fa-arrow-left"></i>
-            </button>
-            <h2 style="margin: 0;">Relato Diario</h2>
-            <div style="width: 40px;"></div>
-        </div>
-        
-        <div class="story-upload-preview">
-            <img src="" alt="Preview">
-        </div>
-        
-        <form id="story-upload-form">
-            <div class="file-input-wrapper">
-                <label for="story-file" class="file-input-label">
-                    <i class="fas fa-camera"></i>
-                    <span>Seleccionar imagen</span>
-                    <span class="file-hint">Toca para elegir una imagen para tu relato</span>
-                </label>
-                <input type="file" id="story-file" accept="image/*" required>
-            </div>
-            
-            <div class="upload-progress">
-                <div class="progress-bar-container">
-                    <div class="progress-bar"></div>
-                </div>
-                <div class="progress-text">Publicando...</div>
-            </div>
-            
-            <button type="submit">Publicar Relato</button>
-        </form>
-    </div>
-</div>
-
 <!-- Global Loading Spinner -->
 <div id="global-loader" class="fixed inset-0 bg-black bg-opacity-50 z-[9999] hidden items-center justify-center">
   <div class="loader"></div>
@@ -16497,7 +16526,6 @@ firebase.auth().onAuthStateChanged(user => {
 });
 </script>
 
-<script src="stories.js"></script>
 <script src="community-firebase.js"></script>
 <script src="search-firebase.js"></script>
 </body>
