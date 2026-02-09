@@ -12273,47 +12273,62 @@ async function likeNote(noteId) {
     document.getElementById('search-view').classList.add('hidden');
     mainApp.classList.remove('hidden');
   }
+  let searchStoriesRef = null;
+  let searchStoriesHandler = null;
+
+  function detachSearchStoriesListener() {
+    if (searchStoriesRef && searchStoriesHandler) {
+      searchStoriesRef.off('value', searchStoriesHandler);
+    }
+    searchStoriesRef = null;
+    searchStoriesHandler = null;
+  }
+
   function performRealTimeSearch() {
-  const rawQuery = document.getElementById('search-input').value.trim();
-  const query = rawQuery.toLowerCase();
-  const category = document.getElementById('category-filter').value;
-  const recentThreshold = Date.now() - (24 * 60 * 60 * 1000);
+    const rawQuery = document.getElementById('search-input').value.trim();
+    const query = rawQuery.toLowerCase();
+    const category = document.getElementById('category-filter').value;
+    const recentRangeMs = 7 * 24 * 60 * 60 * 1000;
+    const recentThreshold = Date.now() - recentRangeMs;
 
-  renderWikipediaSummary(rawQuery);
-  
-  firebase.database().ref('stories').once('value').then(snapshot => {
-    let books = [];
-    snapshot.forEach(child => {
-      const story = child.val();
-      const storyTimestamp = story.timestamp || story.createdAt || story.lastUpdate;
-      const matchesQuery = story.title && story.title.toLowerCase().includes(query);
-      const matchesCategory = !category
-        || (category === 'recent' && storyTimestamp && storyTimestamp >= recentThreshold)
-        || story.category === category;
-      
-      if (matchesQuery && matchesCategory) {
-        books.push(story);
-      }
-    });
-    renderBooksCarousel(books);
-  });
+    renderWikipediaSummary(rawQuery);
 
-  if (query) {
-    firebase.database().ref('users').once('value').then(snapshot => {
-      let authors = [];
+    detachSearchStoriesListener();
+    searchStoriesRef = firebase.database().ref('stories');
+    searchStoriesHandler = snapshot => {
+      const books = [];
       snapshot.forEach(child => {
-        const userData = child.val();
-        if (userData.username && userData.username.toLowerCase().includes(query)) {
-          userData.uid = child.key;
-          authors.push(userData);
+        const story = child.val();
+        const storyTimestamp = story.timestamp || story.createdAt || story.lastUpdate;
+        const matchesQuery = story.title && story.title.toLowerCase().includes(query);
+        const matchesCategory = !category
+          || (category === 'recent' && storyTimestamp && storyTimestamp >= recentThreshold)
+          || story.category === category;
+
+        if (matchesQuery && matchesCategory) {
+          books.push(story);
         }
       });
-      renderAuthorsList(authors);
-    });
-  } else {
-    document.getElementById('search-authors-list').innerHTML = '';
+      renderBooksCarousel(books);
+    };
+    searchStoriesRef.on('value', searchStoriesHandler);
+
+    if (query) {
+      firebase.database().ref('users').once('value').then(snapshot => {
+        const authors = [];
+        snapshot.forEach(child => {
+          const userData = child.val();
+          if (userData.username && userData.username.toLowerCase().includes(query)) {
+            userData.uid = child.key;
+            authors.push(userData);
+          }
+        });
+        renderAuthorsList(authors);
+      });
+    } else {
+      document.getElementById('search-authors-list').innerHTML = '';
+    }
   }
-}
 
 document.getElementById('search-input').addEventListener('input', performRealTimeSearch);
 document.getElementById('category-filter').addEventListener('change', performRealTimeSearch);
