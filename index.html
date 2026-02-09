@@ -240,6 +240,20 @@ body {
   margin-top: 4px;
 }
 
+.top-story-card {
+  width: 220px;
+}
+
+.top-story-poster {
+  height: 300px;
+}
+
+.top-story-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 /* Etiqueta de fundador */
 .founder-tag {
   font-size: 0.8rem;
@@ -2706,6 +2720,13 @@ setInterval(checkScheduledChapters, 60000);
     </style>
     
     <!-- SECCIONES DE CONTENIDO -->
+<section id="top-stories-section" class="mb-8">
+      <div class="flex justify-between items-center mb-4 px-4">
+      <h2 id="top-stories-title" class="text-base font-semibold text-gray-900">Mejores Historias</h2>
+      </div>
+      <div id="top-stories" class="flex space-x-4 overflow-x-auto px-4 scrollbar-hide"></div>
+</section>
+
 <section id="new-releases-section" class="mb-8">
       <div class="flex justify-between items-center mb-4 px-4">
       <h2 id="new-releases-title" class="text-base font-semibold text-gray-900">Nuevos Lanzamientos</h2>
@@ -4234,7 +4255,7 @@ function escapeHtml(text) {
   </div>
 
   <div class="p-4">
-    <div class="flex gap-2 overflow-x-auto pb-3 mb-4">
+    <div id="search-category-chips" class="flex gap-2 overflow-x-auto pb-3 mb-4">
       <button type="button" class="category-chip active" data-value="">Todas</button>
       <button type="button" class="category-chip" data-value="recent">Recientes</button>
       <button type="button" class="category-chip" data-value="aventura">Aventura</button>
@@ -4264,6 +4285,26 @@ function escapeHtml(text) {
     </div>
 
     <div id="search-stories-section">
+      <div id="wiki-summary-card" class="hidden mb-4">
+        <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-semibold uppercase tracking-wide text-gray-400">Generado por IA</span>
+            <span id="wiki-type-badge" class="hidden rounded-full bg-gray-900 px-2 py-1 text-[10px] font-semibold uppercase text-white"></span>
+          </div>
+          <div class="mt-3 flex gap-3">
+            <div id="wiki-image-container" class="hidden h-20 w-16 overflow-hidden rounded-lg bg-gray-100">
+              <img id="wiki-image" src="" alt="Wikipedia" class="h-full w-full object-cover">
+            </div>
+            <div class="flex-1">
+              <p id="wiki-content" class="wiki-summary-text text-sm text-gray-700"></p>
+              <div class="mt-2">
+                <a id="wiki-link" class="text-xs font-semibold text-[#00A2FF]" target="_blank" rel="noopener">Ver en Wikipedia</a>
+              </div>
+              <div id="wiki-loading" class="mt-2 hidden text-xs text-gray-400">Buscando en Wikipedia...</div>
+            </div>
+          </div>
+        </div>
+      </div>
       <div id="search-books-carousel" class="grid grid-cols-3 gap-1"></div>
     </div>
 
@@ -4340,6 +4381,13 @@ function escapeHtml(text) {
   50% {
     opacity: 1;
   }
+}
+
+.wiki-summary-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
 }
 </style>
 
@@ -4617,264 +4665,194 @@ function clearSearchInput() {
     console.log('Buscando:', term);
   }
   
+  const wikiContentKeywords = {
+    // Español
+    movies: ['película', 'film', 'cine', 'movie', 'cinema'],
+    series: ['serie', 'tv', 'televisión', 'show', 'temporada', 'episodio'],
+    books: ['libro', 'novela', 'autor', 'escritor', 'literatura', 'cuento', 'relato', 'poesía', 'ensayo'],
+    genres: ['fantasía', 'ciencia ficción', 'romance', 'misterio', 'terror', 'aventura', 'drama', 'comedia', 'thriller', 'suspenso', 'biografía', 'documental'],
+    // Inglés
+    moviesEn: ['movie', 'film', 'cinema', 'picture', 'flick'],
+    seriesEn: ['series', 'tv show', 'television', 'season', 'episode'],
+    booksEn: ['book', 'novel', 'author', 'writer', 'literature', 'story', 'tale', 'poetry', 'essay'],
+    genresEn: ['fantasy', 'science fiction', 'romance', 'mystery', 'horror', 'adventure', 'drama', 'comedy', 'thriller', 'suspense', 'biography', 'documentary'],
+    // Portugués
+    moviesPt: ['filme', 'cinema', 'película'],
+    seriesPt: ['série', 'programa', 'televisão', 'temporada', 'episódio'],
+    booksPt: ['livro', 'romance', 'autor', 'escritor', 'literatura', 'conto', 'poesia'],
+    genresPt: ['fantasia', 'ficção científica', 'romance', 'mistério', 'terror', 'aventura', 'drama', 'comédia'],
+    // Japonés (romanizado)
+    moviesJa: ['eiga', 'cinema', 'film'],
+    seriesJa: ['anime', 'dorama', 'bangumi'],
+    booksJa: ['hon', 'shosetsu', 'sakka', 'bungaku'],
+    // Coreano (romanizado)
+    moviesKo: ['yeonghwa', 'cinema'],
+    seriesKo: ['deurama', 'bangbeom'],
+    booksKo: ['chaek', 'soseol', 'jakga'],
+    // Italiano
+    moviesIt: ['film', 'cinema', 'pellicola'],
+    seriesIt: ['serie', 'programma', 'televisione', 'stagione', 'episodio'],
+    booksIt: ['libro', 'romanzo', 'autore', 'scrittore', 'letteratura', 'racconto', 'poesia'],
+    genresIt: ['fantasia', 'fantascienza', 'romantico', 'mistero', 'horror', 'avventura', 'dramma', 'commedia'],
+    // Francés
+    moviesFr: ['film', 'cinéma', 'pellicule'],
+    seriesFr: ['série', 'émission', 'télévision', 'saison', 'épisode'],
+    booksFr: ['livre', 'roman', 'auteur', 'écrivain', 'littérature', 'conte', 'poésie'],
+    genresFr: ['fantaisie', 'science-fiction', 'romance', 'mystère', 'horreur', 'aventure', 'drame', 'comédie']
+  };
 
-    const wikiResults = document.getElementById('wikipedia-results');
+  const wikiKeywordSets = {
+    movies: [
+      ...wikiContentKeywords.movies, ...wikiContentKeywords.moviesEn, ...wikiContentKeywords.moviesPt,
+      ...wikiContentKeywords.moviesJa, ...wikiContentKeywords.moviesKo, ...wikiContentKeywords.moviesIt,
+      ...wikiContentKeywords.moviesFr
+    ],
+    series: [
+      ...wikiContentKeywords.series, ...wikiContentKeywords.seriesEn, ...wikiContentKeywords.seriesPt,
+      ...wikiContentKeywords.seriesJa, ...wikiContentKeywords.seriesKo, ...wikiContentKeywords.seriesIt,
+      ...wikiContentKeywords.seriesFr
+    ],
+    books: [
+      ...wikiContentKeywords.books, ...wikiContentKeywords.booksEn, ...wikiContentKeywords.booksPt,
+      ...wikiContentKeywords.booksJa, ...wikiContentKeywords.booksKo, ...wikiContentKeywords.booksIt,
+      ...wikiContentKeywords.booksFr
+    ],
+    genres: [
+      ...wikiContentKeywords.genres, ...wikiContentKeywords.genresEn, ...wikiContentKeywords.genresPt,
+      ...wikiContentKeywords.genresIt, ...wikiContentKeywords.genresFr
+    ]
+  };
+
+  async function renderWikipediaSummary(rawQuery) {
+    const wikiCard = document.getElementById('wiki-summary-card');
     const wikiContent = document.getElementById('wiki-content');
     const wikiLink = document.getElementById('wiki-link');
     const wikiLoading = document.getElementById('wiki-loading');
     const wikiImage = document.getElementById('wiki-image');
     const wikiImageContainer = document.getElementById('wiki-image-container');
     const wikiTypeBadge = document.getElementById('wiki-type-badge');
-    const wikiIcon = document.getElementById('wiki-icon');
-    const categoryChips = document.querySelector('.flex.gap-2.overflow-x-auto');
-    
-    // Palabras clave mejoradas para múltiples idiomas
-    const contentKeywords = {
-      // Español
-      movies: ['película', 'film', 'cine', 'movie', 'cinema'],
-      series: ['serie', 'tv', 'televisión', 'show', 'temporada', 'episodio'],
-      books: ['libro', 'novela', 'autor', 'escritor', 'literatura', 'cuento', 'relato', 'poesía', 'ensayo'],
-      genres: ['fantasía', 'ciencia ficción', 'romance', 'misterio', 'terror', 'aventura', 'drama', 'comedia', 'thriller', 'suspenso', 'biografía', 'documental'],
-      
-      // Inglés
-      moviesEn: ['movie', 'film', 'cinema', 'picture', 'flick'],
-      seriesEn: ['series', 'tv show', 'television', 'season', 'episode'],
-      booksEn: ['book', 'novel', 'author', 'writer', 'literature', 'story', 'tale', 'poetry', 'essay'],
-      genresEn: ['fantasy', 'science fiction', 'romance', 'mystery', 'horror', 'adventure', 'drama', 'comedy', 'thriller', 'suspense', 'biography', 'documentary'],
-      
-      // Portugués
-      moviesPt: ['filme', 'cinema', 'película'],
-      seriesPt: ['série', 'programa', 'televisão', 'temporada', 'episódio'],
-      booksPt: ['livro', 'romance', 'autor', 'escritor', 'literatura', 'conto', 'poesia'],
-      genresPt: ['fantasia', 'ficção científica', 'romance', 'mistério', 'terror', 'aventura', 'drama', 'comédia'],
-      
-      // Japonés (romanizado)
-      moviesJa: ['eiga', 'cinema', 'film'],
-      seriesJa: ['anime', 'dorama', 'bangumi'],
-      booksJa: ['hon', 'shosetsu', 'sakka', 'bungaku'],
-      
-      // Coreano (romanizado)
-      moviesKo: ['yeonghwa', 'cinema'],
-      seriesKo: ['deurama', 'bangbeom'],
-      booksKo: ['chaek', 'soseol', 'jakga'],
-      
-      // Italiano
-      moviesIt: ['film', 'cinema', 'pellicola'],
-      seriesIt: ['serie', 'programma', 'televisione', 'stagione', 'episodio'],
-      booksIt: ['libro', 'romanzo', 'autore', 'scrittore', 'letteratura', 'racconto', 'poesia'],
-      genresIt: ['fantasia', 'fantascienza', 'romantico', 'mistero', 'horror', 'avventura', 'dramma', 'commedia'],
-      
-      // Francés
-      moviesFr: ['film', 'cinéma', 'pellicule'],
-      seriesFr: ['série', 'émission', 'télévision', 'saison', 'épisode'],
-      booksFr: ['livre', 'roman', 'auteur', 'écrivain', 'littérature', 'conte', 'poésie'],
-      genresFr: ['fantaisie', 'science-fiction', 'romance', 'mystère', 'horreur', 'aventure', 'drame', 'comédie']
-    };
-    
-    const allKeywords = [
-      ...contentKeywords.movies, ...contentKeywords.series, ...contentKeywords.books, ...contentKeywords.genres,
-      ...contentKeywords.moviesEn, ...contentKeywords.seriesEn, ...contentKeywords.booksEn, ...contentKeywords.genresEn,
-      ...contentKeywords.moviesPt, ...contentKeywords.seriesPt, ...contentKeywords.booksPt, ...contentKeywords.genresPt,
-      ...contentKeywords.moviesJa, ...contentKeywords.seriesJa, ...contentKeywords.booksJa,
-      ...contentKeywords.moviesKo, ...contentKeywords.seriesKo, ...contentKeywords.booksKo,
-      ...contentKeywords.moviesIt, ...contentKeywords.seriesIt, ...contentKeywords.booksIt, ...contentKeywords.genresIt,
-      ...contentKeywords.moviesFr, ...contentKeywords.seriesFr, ...contentKeywords.booksFr, ...contentKeywords.genresFr
-    ];
-    
-    const isContentRelated = allKeywords.some(keyword => 
-      query.toLowerCase().includes(keyword) || 
-      keyword.includes(query.toLowerCase())
-    ) || query.length >= 5; // Reducido para ser menos restrictivo
-    
-    if (!isContentRelated) {
-      wikiResults.classList.add('hidden');
-      categoryChips.classList.remove('hidden');
+    const categoryChips = document.getElementById('search-category-chips');
+
+    if (!wikiCard || !wikiContent || !wikiLink || !wikiLoading || !wikiImage || !wikiImageContainer || !wikiTypeBadge) {
       return;
     }
-    
-    // Mostrar loading
-    wikiResults.classList.remove('hidden');
+
+    const query = rawQuery.trim();
+    if (!query) {
+      wikiCard.classList.add('hidden');
+      if (categoryChips) categoryChips.classList.remove('hidden');
+      return;
+    }
+
+    const lowerQuery = query.toLowerCase();
+    const isKeywordMatch = [...wikiKeywordSets.movies, ...wikiKeywordSets.series, ...wikiKeywordSets.books].some(keyword =>
+      lowerQuery.includes(keyword)
+    );
+
+    wikiCard.classList.remove('hidden');
     wikiLoading.classList.remove('hidden');
-    wikiContent.textContent = 'Analizando contenido...';
-    
-    // Reset UI
+    wikiContent.textContent = 'Buscando información...';
     wikiImageContainer.classList.add('hidden');
     wikiTypeBadge.classList.add('hidden');
-    wikiIcon.classList.remove('hidden');
-    
-    // Detectar idioma y configurar URLs de Wikipedia
+
     const wikipediaLanguages = {
-      'es': 'es.wikipedia.org',
-      'en': 'en.wikipedia.org',
-      'pt': 'pt.wikipedia.org',
-      'ja': 'ja.wikipedia.org',
-      'ko': 'ko.wikipedia.org',
-      'it': 'it.wikipedia.org',
-      'fr': 'fr.wikipedia.org'
+      es: 'es.wikipedia.org',
+      en: 'en.wikipedia.org',
+      pt: 'pt.wikipedia.org',
+      ja: 'ja.wikipedia.org',
+      ko: 'ko.wikipedia.org',
+      it: 'it.wikipedia.org',
+      fr: 'fr.wikipedia.org'
     };
-    
-    // Detectar idioma basado en las palabras clave
-    let detectedLanguage = 'en'; // Por defecto inglés para mejor compatibilidad
-    
-    if (contentKeywords.moviesEn.some(k => query.toLowerCase().includes(k)) || 
-        contentKeywords.seriesEn.some(k => query.toLowerCase().includes(k)) ||
-        contentKeywords.booksEn.some(k => query.toLowerCase().includes(k))) {
+
+    let detectedLanguage = wikipediaLanguages[currentLanguage] ? currentLanguage : 'es';
+
+    if (wikiContentKeywords.moviesEn.some(k => lowerQuery.includes(k)) ||
+        wikiContentKeywords.seriesEn.some(k => lowerQuery.includes(k)) ||
+        wikiContentKeywords.booksEn.some(k => lowerQuery.includes(k))) {
       detectedLanguage = 'en';
-    } else if (contentKeywords.moviesPt.some(k => query.toLowerCase().includes(k)) || 
-               contentKeywords.seriesPt.some(k => query.toLowerCase().includes(k))) {
+    } else if (wikiContentKeywords.moviesPt.some(k => lowerQuery.includes(k)) ||
+               wikiContentKeywords.seriesPt.some(k => lowerQuery.includes(k))) {
       detectedLanguage = 'pt';
-    } else if (contentKeywords.moviesJa.some(k => query.toLowerCase().includes(k)) || 
-               contentKeywords.seriesJa.some(k => query.toLowerCase().includes(k))) {
+    } else if (wikiContentKeywords.moviesJa.some(k => lowerQuery.includes(k)) ||
+               wikiContentKeywords.seriesJa.some(k => lowerQuery.includes(k))) {
       detectedLanguage = 'ja';
-    } else if (contentKeywords.moviesKo.some(k => query.toLowerCase().includes(k)) || 
-               contentKeywords.seriesKo.some(k => query.toLowerCase().includes(k))) {
+    } else if (wikiContentKeywords.moviesKo.some(k => lowerQuery.includes(k)) ||
+               wikiContentKeywords.seriesKo.some(k => lowerQuery.includes(k))) {
       detectedLanguage = 'ko';
-    } else if (contentKeywords.moviesIt.some(k => query.toLowerCase().includes(k)) || 
-               contentKeywords.seriesIt.some(k => query.toLowerCase().includes(k))) {
+    } else if (wikiContentKeywords.moviesIt.some(k => lowerQuery.includes(k)) ||
+               wikiContentKeywords.seriesIt.some(k => lowerQuery.includes(k))) {
       detectedLanguage = 'it';
-    } else if (contentKeywords.moviesFr.some(k => query.toLowerCase().includes(k)) || 
-               contentKeywords.seriesFr.some(k => query.toLowerCase().includes(k))) {
+    } else if (wikiContentKeywords.moviesFr.some(k => lowerQuery.includes(k)) ||
+               wikiContentKeywords.seriesFr.some(k => lowerQuery.includes(k))) {
       detectedLanguage = 'fr';
     }
-    
+
+    const cleanQuery = query.replace(/[^a-zA-Z0-9À-ſ\s]/g, '').trim();
+
+    if (!cleanQuery) {
+      wikiCard.classList.add('hidden');
+      if (categoryChips) categoryChips.classList.remove('hidden');
+      return;
+    }
+
     try {
-      // Buscar en Wikipedia con el idioma detectado
-      const cleanQuery = query.trim().replace(/[^a-zA-Z0-9À-ſ\s]/g, '');
-      const wikiDomain = wikipediaLanguages[detectedLanguage];
+      const wikiDomain = wikipediaLanguages[detectedLanguage] || wikipediaLanguages.es;
       const searchUrl = `https://${wikiDomain}/api/rest_v1/page/summary/${encodeURIComponent(cleanQuery)}`;
-      
-      const response = await fetch(searchUrl, {
-        headers: {
-          'User-Agent': 'ZenvioApp/1.0'
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        
-        const extract = data.extract || '';
-        const title = data.title || '';
-        const fullText = (extract + ' ' + title).toLowerCase();
-        
-        // Verificar si hay contenido suficiente
-        if (extract && extract.length > 10) {
-          const summary = extract.length > 120 ? extract.substring(0, 120) + '...' : extract;
-          
-          wikiContent.textContent = summary;
-          wikiLink.href = data.content_urls?.desktop?.page || `https://${wikiDomain}/wiki/${encodeURIComponent(cleanQuery)}`;
-          
-          // Detección mejorada de tipo de contenido para múltiples idiomas
-          const allMovieKeywords = [...contentKeywords.movies, ...contentKeywords.moviesEn, ...contentKeywords.moviesPt, ...contentKeywords.moviesJa, ...contentKeywords.moviesKo, ...contentKeywords.moviesIt, ...contentKeywords.moviesFr];
-          const allSeriesKeywords = [...contentKeywords.series, ...contentKeywords.seriesEn, ...contentKeywords.seriesPt, ...contentKeywords.seriesJa, ...contentKeywords.seriesKo, ...contentKeywords.seriesIt, ...contentKeywords.seriesFr];
-          
-          const isMovie = allMovieKeywords.some(keyword => fullText.includes(keyword));
-          const isSeries = allSeriesKeywords.some(keyword => fullText.includes(keyword));
-          
-          if ((isMovie || isSeries) && data.thumbnail?.source) {
-            // Mostrar imagen y badge
-            wikiImage.src = data.thumbnail.source;
-            wikiImage.onerror = function() {
-              wikiImageContainer.classList.add('hidden');
-              wikiIcon.classList.remove('hidden');
-            };
-            
-            wikiImageContainer.classList.remove('hidden');
-            wikiIcon.classList.add('hidden');
-            
-            wikiTypeBadge.textContent = isSeries ? 'Serie' : 'Película';
-            wikiTypeBadge.classList.remove('hidden');
-            
-            // Ocultar categorías
-            categoryChips.classList.add('hidden');
-          } else {
-            // Contenido literario - mostrar categorías
-            categoryChips.classList.remove('hidden');
-          }
-        } else {
-          // Si no hay contenido suficiente, intentar con otros idiomas
-          const alternativeSearches = [
-            `${cleanQuery}`,
-            `${cleanQuery} series`,
-            `${cleanQuery} movie`
-          ];
-          
-          let found = false;
-          for (const altQuery of alternativeSearches) {
-            for (const lang of ['en', 'es', 'pt', 'fr']) {
-              try {
-                const altWikiDomain = wikipediaLanguages[lang];
-                const altResponse = await fetch(`https://${altWikiDomain}/api/rest_v1/page/summary/${encodeURIComponent(altQuery)}`);
-                if (altResponse.ok) {
-                  const altData = await altResponse.json();
-                  if (altData.extract && altData.extract.length > 10) {
-                    const summary = altData.extract.length > 120 ? altData.extract.substring(0, 120) + '...' : altData.extract;
-                    wikiContent.textContent = summary;
-                    wikiLink.href = altData.content_urls?.desktop?.page || `https://${altWikiDomain}/wiki/${encodeURIComponent(query)}`;
-                    found = true;
-                    categoryChips.classList.add('hidden');
-                    break;
-                  }
-                }
-              } catch (e) {
-                continue;
-              }
-            }
-            if (found) break;
-          }
-          
-          if (!found) {
-            wikiResults.classList.add('hidden');
-            categoryChips.classList.remove('hidden');
-          }
-        }
-        
-      } else {
-        // Intentar búsquedas alternativas en múltiples idiomas
-        const alternativeSearches = [
-          `${cleanQuery}`,
-          `${cleanQuery} series`,
-          `${cleanQuery} movie`,
-          `${cleanQuery} film`
-        ];
-        
-        let found = false;
-        for (const altQuery of alternativeSearches) {
-          for (const lang of ['en', 'es', 'pt', 'fr', 'it']) {
-            try {
-              const altWikiDomain = wikipediaLanguages[lang];
-              const altResponse = await fetch(`https://${altWikiDomain}/api/rest_v1/page/summary/${encodeURIComponent(altQuery)}`);
-              if (altResponse.ok) {
-                const altData = await altResponse.json();
-                if (altData.extract && altData.extract.length > 10) {
-                  const summary = altData.extract.length > 120 ? altData.extract.substring(0, 120) + '...' : altData.extract;
-                  wikiContent.textContent = summary;
-                  wikiLink.href = altData.content_urls?.desktop?.page || `https://${altWikiDomain}/wiki/${encodeURIComponent(query)}`;
-                  found = true;
-                  categoryChips.classList.add('hidden');
-                  break;
-                }
-              }
-            } catch (e) {
-              continue;
-            }
-          }
-          if (found) break;
-        }
-        
-        if (!found) {
-          wikiResults.classList.add('hidden');
-          categoryChips.classList.remove('hidden');
-        }
+      const response = await fetch(searchUrl, { headers: { 'User-Agent': 'ZenvioApp/1.0' } });
+
+      if (!response.ok) {
+        wikiCard.classList.add('hidden');
+        if (categoryChips) categoryChips.classList.remove('hidden');
+        return;
       }
-      
+
+      const data = await response.json();
+      const extract = data.extract || '';
+      const title = data.title || '';
+      const fullText = `${extract} ${title}`.toLowerCase();
+
+      if (!extract || extract.length < 10) {
+        wikiCard.classList.add('hidden');
+        if (categoryChips) categoryChips.classList.remove('hidden');
+        return;
+      }
+
+      const matchesMovie = wikiKeywordSets.movies.some(keyword => fullText.includes(keyword) || lowerQuery.includes(keyword));
+      const matchesSeries = wikiKeywordSets.series.some(keyword => fullText.includes(keyword) || lowerQuery.includes(keyword));
+      const matchesBook = wikiKeywordSets.books.some(keyword => fullText.includes(keyword) || lowerQuery.includes(keyword));
+      const contentType = matchesSeries ? 'Serie' : matchesMovie ? 'Película' : matchesBook ? 'Libro' : '';
+
+      if (!contentType && !isKeywordMatch) {
+        wikiCard.classList.add('hidden');
+        if (categoryChips) categoryChips.classList.remove('hidden');
+        return;
+      }
+
+      const summary = extract.length > 160 ? `${extract.substring(0, 160)}...` : extract;
+      wikiContent.textContent = summary;
+      wikiLink.href = data.content_urls?.desktop?.page || `https://${wikiDomain}/wiki/${encodeURIComponent(cleanQuery)}`;
+
+      if (contentType) {
+        wikiTypeBadge.textContent = contentType;
+        wikiTypeBadge.classList.remove('hidden');
+      }
+
+      if (data.thumbnail?.source) {
+        wikiImage.src = data.thumbnail.source;
+        wikiImageContainer.classList.remove('hidden');
+      } else {
+        wikiImageContainer.classList.add('hidden');
+      }
+
+      if (categoryChips) categoryChips.classList.add('hidden');
     } catch (error) {
       console.error('Error buscando en Wikipedia:', error);
-      wikiResults.classList.add('hidden');
-      categoryChips.classList.remove('hidden');
+      wikiCard.classList.add('hidden');
+      if (categoryChips) categoryChips.classList.remove('hidden');
     } finally {
       wikiLoading.classList.add('hidden');
     }
-    
   }
 
   // Funciones generales para manejar botones X en campos de búsqueda
@@ -10812,6 +10790,7 @@ async function likeNote(noteId) {
       btnIniciarSesion: "Iniciar Sesión",
       btnToggleAuth: "¿No tienes cuenta? Regístrate",
       btnVolver: "Volver",
+      topStories: "Mejores Historias",
       newReleases: "Nuevos Lanzamientos",
       top10: "Top 10",
       popular: "Más Populares",
@@ -10866,8 +10845,10 @@ async function likeNote(noteId) {
       editLater: "Puedes editar tu historia más tarde desde tu perfil."
     },
     en: {
+      topStories: "Top Stories",
       /* Traducciones en inglés */ },
     pt: {
+      topStories: "Melhores Histórias",
       /* Traducciones en portugués */ }
   };
 
@@ -10904,6 +10885,7 @@ async function likeNote(noteId) {
     document.getElementById('btn-volver-search').innerText = translations[currentLanguage].btnVolver;
     document.getElementById('btn-volver-profile').innerText = translations[currentLanguage].btnVolver;
     document.getElementById('btn-volver-author').innerText = translations[currentLanguage].btnVolver;
+    document.getElementById('top-stories-title').innerText = translations[currentLanguage].topStories;
     document.getElementById('new-releases-title').innerText = translations[currentLanguage].newReleases;
     document.getElementById('top10-title').innerText = translations[currentLanguage].top10;
     document.getElementById('popular-title').innerText = translations[currentLanguage].popular;
@@ -12295,9 +12277,12 @@ async function likeNote(noteId) {
     mainApp.classList.remove('hidden');
   }
   function performRealTimeSearch() {
-  const query = document.getElementById('search-input').value.trim().toLowerCase();
+  const rawQuery = document.getElementById('search-input').value.trim();
+  const query = rawQuery.toLowerCase();
   const category = document.getElementById('category-filter').value;
   const recentThreshold = Date.now() - (24 * 60 * 60 * 1000);
+
+  renderWikipediaSummary(rawQuery);
   
   firebase.database().ref('stories').once('value').then(snapshot => {
     let books = [];
@@ -13792,6 +13777,46 @@ document.getElementById('category-filter').addEventListener('change', performRea
     }
   }
 
+  async function loadTopStories() {
+    const stories = await loadStoriesFromAWS();
+    const container = document.getElementById('top-stories');
+    container.innerHTML = '';
+
+    if (!stories.length) {
+      container.innerHTML = '<p class="text-gray-500">No hay historias disponibles</p>';
+      return;
+    }
+
+    const rankedStories = stories
+      .map(story => {
+        const ratingScore = (story.ratingValue || 0) * 100;
+        const likesScore = (story.likes || 0) * 10;
+        const viewsScore = story.views || 0;
+        return {
+          ...story,
+          engagementScore: ratingScore + likesScore + viewsScore
+        };
+      })
+      .sort((a, b) => b.engagementScore - a.engagementScore)
+      .slice(0, 10);
+
+    rankedStories.forEach(story => {
+      const card = document.createElement('div');
+      card.className = 'top-story-card flex-shrink-0 cursor-pointer';
+      card.onclick = () => openStoryDetail(story);
+      card.innerHTML = `
+        <div class="top-story-poster rounded-2xl overflow-hidden shadow-md transform transition-transform hover:scale-105">
+          <img src="${story.coverImage || '/api/placeholder/240/360'}" alt="${story.title}" class="top-story-image">
+        </div>
+        <div class="mt-2">
+          <h3 class="font-semibold text-sm truncate">${story.title}</h3>
+          <p class="text-xs text-gray-500 truncate">${story.username || story.author || story.userName || 'Autor desconocido'}</p>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+  }
+
   async function getUserRatingPreferences(userId) {
     const allStories = await loadStoriesFromAWS();
     const userRatings = {};
@@ -14060,6 +14085,7 @@ document.getElementById('category-filter').addEventListener('change', performRea
   async function initializeFeedSections() {
     try {
       await Promise.all([
+        loadTopStories(),
         loadSuggestedStories(),
         loadFeaturedAuthors(),
         loadTrendingStories(),
@@ -16536,6 +16562,7 @@ function closeZenvioStudio() {
       btnIniciarSesion: "Iniciar Sesión",
       btnToggleAuth: "¿No tienes cuenta? Regístrate",
       btnVolver: "Volver",
+      topStories: "Mejores Historias",
       newReleases: "Nuevos Lanzamientos",
       top10: "Top 10",
       popular: "Más Populares",
@@ -16591,11 +16618,13 @@ function closeZenvioStudio() {
     },
     en: {
       appName: "Zenvio",
+      topStories: "Top Stories",
       editLater: "You can edit your story later from your profile."
     },
     pt: {
       appName: "Zenvio",
       tagline: "Seu portal para histórias inesquecíveis",
+      topStories: "Melhores Histórias",
       editLater: "Você pode editar sua história mais tarde em seu perfil."
     }
   };
