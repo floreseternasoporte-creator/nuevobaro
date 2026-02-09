@@ -4234,6 +4234,30 @@ function escapeHtml(text) {
   </div>
 
   <div class="p-4">
+    <div class="flex gap-2 overflow-x-auto pb-3 mb-4">
+      <button type="button" class="category-chip active" data-value="">Todas</button>
+      <button type="button" class="category-chip" data-value="recent">Recientes</button>
+      <button type="button" class="category-chip" data-value="aventura">Aventura</button>
+      <button type="button" class="category-chip" data-value="romance">Romance</button>
+      <button type="button" class="category-chip" data-value="misterio">Misterio</button>
+      <button type="button" class="category-chip" data-value="fantasia">Fantasía</button>
+      <button type="button" class="category-chip" data-value="terror">Terror</button>
+      <button type="button" class="category-chip" data-value="ciencia_ficcion">Ciencia Ficción</button>
+      <button type="button" class="category-chip" data-value="drama">Drama</button>
+      <button type="button" class="category-chip" data-value="comedia">Comedia</button>
+    </div>
+    <select id="category-filter" class="hidden" aria-hidden="true">
+      <option value="">Todas</option>
+      <option value="recent">Recientes</option>
+      <option value="aventura">Aventura</option>
+      <option value="romance">Romance</option>
+      <option value="misterio">Misterio</option>
+      <option value="fantasia">Fantasía</option>
+      <option value="terror">Terror</option>
+      <option value="ciencia_ficcion">Ciencia Ficción</option>
+      <option value="drama">Drama</option>
+      <option value="comedia">Comedia</option>
+    </select>
     <div class="flex border-b border-gray-200 mb-4">
       <button onclick="switchSearchTab('stories')" class="flex-1 py-3 text-center font-semibold border-b-2 border-gray-900" id="search-stories-tab">Historias</button>
       <button onclick="switchSearchTab('authors')" class="flex-1 py-3 text-center font-semibold border-b-2 border-transparent text-gray-400" id="search-authors-tab">Autores</button>
@@ -12273,13 +12297,17 @@ async function likeNote(noteId) {
   function performRealTimeSearch() {
   const query = document.getElementById('search-input').value.trim().toLowerCase();
   const category = document.getElementById('category-filter').value;
+  const recentThreshold = Date.now() - (24 * 60 * 60 * 1000);
   
   firebase.database().ref('stories').once('value').then(snapshot => {
     let books = [];
     snapshot.forEach(child => {
       const story = child.val();
+      const storyTimestamp = story.timestamp || story.createdAt || story.lastUpdate;
       const matchesQuery = story.title && story.title.toLowerCase().includes(query);
-      const matchesCategory = !category || story.category === category;
+      const matchesCategory = !category
+        || (category === 'recent' && storyTimestamp && storyTimestamp >= recentThreshold)
+        || story.category === category;
       
       if (matchesQuery && matchesCategory) {
         books.push(story);
