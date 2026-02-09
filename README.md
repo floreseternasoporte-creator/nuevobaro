@@ -41,10 +41,14 @@ SUPPORT_EMAIL
 ## Funciones
 
 - `notes.js` - GET/POST/DELETE notas
+- `community-notes.js` - GET/POST notas de comunidad
 - `likes.js` - POST likes
 - `following.js` - POST follow/unfollow
 - `notifications.js` - GET/POST notificaciones
+- `chapters.js` - GET/POST capítulos
+- `scheduled-chapters.js` - GET/POST capítulos programados
 - `user-stats.js` - GET estadísticas
+- `users.js` - GET/POST perfiles de usuario
 - `upload-image.js` - POST imágenes
 - `send-support-email.js` - POST emails
 
@@ -54,3 +58,7 @@ SUPPORT_EMAIL
 cd netlify/functions
 npm install
 ```
+
+## Documentación
+
+- Documentación duplicada del módulo CAPTCHA eliminada para mantener el repositorio limpio.

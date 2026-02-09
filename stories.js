@@ -1,26 +1,12 @@
 
-// js/stories.js - TODO CON FIREBASE
+// js/stories.js - Historias con AWS (auth en Firebase)
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Firebase Config
-    const firebaseConfig = {
-        apiKey: "AIzaSyBWBr3sud1_lDPmtLJI42pCBZnco5_vyCc",
-        authDomain: "noble-amp-458106-g0.firebaseapp.com",
-        databaseURL: "https://noble-amp-458106-g0-default-rtdb.firebaseio.com",
-        projectId: "noble-amp-458106-g0",
-        storageBucket: "noble-amp-458106-g0.firebasestorage.app",
-        messagingSenderId: "744574411059",
-        appId: "1:744574411059:web:72a70955f1400df6645e46",
-        measurementId: "G-XEQ1J354HM"
-    };
-
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
-
     const auth = firebase.auth();
-    const database = firebase.database();
-    const storage = firebase.storage();
+    const storiesApi = '/.netlify/functions/get-stories';
+    const uploadStoryApi = '/.netlify/functions/upload-story';
+    const deleteStoryApi = '/.netlify/functions/delete-story';
+    const updateStoryApi = '/.netlify/functions/update-story';
 
     const storiesContainer = document.getElementById('stories');
     const storyViewer = document.getElementById('story-viewer');
@@ -77,12 +63,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            const snapshot = await database.ref('stories').once('value');
-            const stories = [];
-            
-            snapshot.forEach(child => {
-                stories.push({ id: child.key, ...child.val() });
-            });
+            const response = await fetch(storiesApi);
+            if (!response.ok) {
+                throw new Error('No se pudieron cargar las historias');
+            }
+            const data = await response.json();
+            const stories = data.stories || [];
 
             storiesContainer.innerHTML = '';
 
@@ -92,13 +78,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Eliminar historias viejas
                 const oldStories = stories.filter(story => story.timestamp <= twelveHoursAgo);
-                oldStories.forEach(story => {
-                    database.ref('stories/' + story.id).remove();
-                    if (story.coverImage) {
-                        const imageRef = storage.refFromURL(story.coverImage);
-                        imageRef.delete().catch(err => console.log('Error deleting old image:', err));
-                    }
-                });
+                await Promise.all(
+                    oldStories.map((story) =>
+                        fetch(deleteStoryApi, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ storyId: story.id })
+                        }).catch((err) => console.log('Error deleting old story:', err))
+                    )
+                );
 
                 // Agrupar por usuario
                 const storiesByUser = {};
@@ -175,67 +163,62 @@ document.addEventListener('DOMContentLoaded', () => {
         progressText.textContent = 'Subiendo...';
         progressBar.style.width = '30%';
 
-        // Subir imagen a Firebase Storage
-        const storageRef = storage.ref('stories/' + currentUser.uid + '/' + Date.now() + '_' + file.name);
-        const uploadTask = storageRef.put(file);
+        const reader = new FileReader();
+        reader.onload = async () => {
+            try {
+                const coverImageData = reader.result;
+                const response = await fetch(uploadStoryApi, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: currentUser.uid,
+                        username: currentUser.displayName || currentUser.email.split('@')[0],
+                        email: currentUser.email,
+                        coverImageData,
+                        coverImageFileName: file.name,
+                        coverImageContentType: file.type || 'image/jpeg'
+                    })
+                });
 
-        uploadTask.on('state_changed',
-            (snapshot) => {
-                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 70 + 30;
-                progressBar.style.width = progress + '%';
-            },
-            (error) => {
-                console.error("Error al subir imagen:", error);
+                if (!response.ok) {
+                    throw new Error('No se pudo publicar el relato');
+                }
+
+                progressBar.style.width = '100%';
+                progressText.textContent = '¡Relato publicado!';
+
+                setTimeout(() => {
+                    storyUploadModal.classList.remove('active');
+                    resetUploadForm();
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Publicar Relato';
+                    loadStories();
+                }, 500);
+            } catch (error) {
+                console.error("Error al publicar relato:", error);
                 alert('Error al publicar la nota. Por favor intenta de nuevo.');
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Publicar Relato';
                 progressDiv.style.display = 'none';
-            },
-            async () => {
-                try {
-                    const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
-                    
-                    // Guardar en Realtime Database
-                    const storyData = {
-                        userId: currentUser.uid,
-                        username: currentUser.displayName || currentUser.email.split('@')[0],
-                        email: currentUser.email,
-                        coverImage: downloadURL,
-                        timestamp: Date.now(),
-                        views: 0
-                    };
-
-                    await database.ref('stories').push(storyData);
-                    
-                    progressBar.style.width = '100%';
-                    progressText.textContent = '¡Relato publicado!';
-                    
-                    setTimeout(() => {
-                        storyUploadModal.classList.remove('active');
-                        resetUploadForm();
-                        submitBtn.disabled = false;
-                        submitBtn.textContent = 'Publicar Relato';
-                        loadStories();
-                    }, 500);
-                } catch (error) {
-                    console.error("Error al guardar en database:", error);
-                    alert('Error al publicar la nota. Por favor intenta de nuevo.');
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = 'Publicar Relato';
-                    progressDiv.style.display = 'none';
-                }
             }
-        );
+        };
+        reader.onerror = () => {
+            alert('No se pudo leer la imagen.');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Publicar Relato';
+            progressDiv.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
     }
 
     async function openStoryViewer(userId) {
         try {
-            const snapshot = await database.ref('stories').orderByChild('userId').equalTo(userId).once('value');
-            const stories = [];
-            
-            snapshot.forEach(child => {
-                stories.push({ id: child.key, ...child.val() });
-            });
+            const response = await fetch(`${storiesApi}?userId=${encodeURIComponent(userId)}`);
+            if (!response.ok) {
+                throw new Error('No se pudieron cargar las historias');
+            }
+            const data = await response.json();
+            const stories = data.stories || [];
             
             if (stories.length === 0) return;
 
@@ -256,7 +239,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Incrementar vistas
                 if (currentUser && currentUser.uid !== userId) {
-                    database.ref('stories/' + story.id + '/views').transaction(views => (views || 0) + 1);
+                    const nextViews = (story.views || 0) + 1;
+                    story.views = nextViews;
+                    fetch(updateStoryApi, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ storyId: story.id, updates: { views: nextViews } })
+                    }).catch((error) => console.warn('No se pudo actualizar vistas:', error));
                 }
 
                 const displayName = story.username || story.email?.split('@')[0] || 'Usuario';
@@ -335,15 +324,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function deleteStory(storyId) {
         try {
-            const snapshot = await database.ref('stories/' + storyId).once('value');
-            const story = snapshot.val();
-            
-            if (story && story.coverImage) {
-                const imageRef = storage.refFromURL(story.coverImage);
-                await imageRef.delete();
+            const response = await fetch(deleteStoryApi, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ storyId })
+            });
+            if (!response.ok) {
+                throw new Error('No se pudo eliminar la historia');
             }
-            
-            await database.ref('stories/' + storyId).remove();
             closeStoryViewer();
             loadStories();
         } catch (error) {
