@@ -12186,14 +12186,15 @@ async function likeNote(noteId) {
     window.currentStoryId = story.id;
     listenForStoryBlock(story.id);
     
-    const viewRef = firebase.database().ref('storyViews/' + story.id + '/' + user.uid);
-    viewRef.once('value').then(snapshot => {
-      if (!snapshot.exists()) {
-        viewRef.set(true);
-        const storyViewsRef = firebase.database().ref('stories/' + story.id + '/views');
-        storyViewsRef.transaction(current => (current || 0) + 1);
-      }
-    });
+    if (user) {
+      const nextViews = (story.views || 0) + 1;
+      story.views = nextViews;
+      fetch('/.netlify/functions/update-story', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ storyId: story.id, updates: { views: nextViews } })
+      }).catch(error => console.warn('No se pudo actualizar vistas:', error));
+    }
     
     // Actualizar contenido del modal
     document.getElementById('detail-cover').src = story.coverImage || '/api/placeholder/800/400';
@@ -12204,53 +12205,55 @@ async function likeNote(noteId) {
     document.getElementById('detail-author').onclick = () => openAuthorProfile(story.userId);
     document.getElementById('detail-synopsis').textContent = story.synopsis || "Sinopsis no disponible.";
     
-    // Cargar capítulos
-    firebase.database().ref('stories/' + story.id + '/chapters').on('value', snapshot => {
-      const chaptersList = document.getElementById('detail-chapters');
-      chaptersList.innerHTML = "";
-      currentChapters = [];
-      let chapterCount = snapshot.numChildren();
-      let totalRating = 0, ratingCount = 0;
-      
-      snapshot.forEach(child => {
-        const chapter = child.val();
-        chapter.id = child.key;
-        currentChapters.push(chapter);
-        const li = document.createElement('li');
-        li.className = "p-4 border border-gray-200 rounded-xl hover:bg-gray-50 flex justify-between items-center";
-        li.innerHTML = `<span class="text-black font-medium">Capítulo ${chapter.chapterNumber}</span>
-                          <button class="bg-[#00A2FF] text-white px-3 py-2 rounded-lg hover:bg-[#0066CC] transition-colors font-medium" onclick='openChapterReadModal("${story.id}", "${child.key}")'>Leer</button>`;
-        chaptersList.appendChild(li);
-        
-        if (chapter.ratings) {
-          Object.values(chapter.ratings).forEach(r => {
-            totalRating += r;
-            ratingCount++;
-          });
-        }
-      });
-      
-      currentChapters.sort((a, b) => a.chapterNumber - b.chapterNumber);
-      currentEditingStory = {
-        id: story.id,
-        currentChapterId: currentChapters.length ? currentChapters[0].id : null
-      };
-      
-      let overallRating = ratingCount ? (totalRating / ratingCount).toFixed(1) : 0;
-      document.getElementById('detail-metrics').innerHTML =
-        `<div class="bg-white p-2 rounded-lg shadow-sm flex flex-col items-center w-20">
-          <span class="text-lg font-bold text-black">${story.views || 0}</span>
-          <p class="text-xs text-[#00A2FF] mt-1">Visitas</p>
-        </div>
-        <div class="bg-white p-2 rounded-lg shadow-sm flex flex-col items-center w-20">
-          <span class="text-lg font-bold text-black">${overallRating}</span>
-          <p class="text-xs text-[#00A2FF] mt-1">Rating</p>
-        </div>
-        <div class="bg-white p-2 rounded-lg shadow-sm flex flex-col items-center w-20">
-          <span class="text-lg font-bold text-black">${chapterCount}</span>
-          <p class="text-xs text-[#00A2FF] mt-1">Capítulos</p>
-        </div>`;
-    });
+    // Cargar capítulos (AWS)
+    fetch(`/.netlify/functions/get-chapters?storyId=${story.id}`)
+      .then(response => response.json())
+      .then(data => {
+        const chaptersList = document.getElementById('detail-chapters');
+        chaptersList.innerHTML = "";
+        currentChapters = [];
+        const chapters = data.chapters || [];
+        let chapterCount = chapters.length;
+        let totalRating = 0, ratingCount = 0;
+
+        chapters.forEach(chapter => {
+          currentChapters.push(chapter);
+          const li = document.createElement('li');
+          li.className = "p-4 border border-gray-200 rounded-xl hover:bg-gray-50 flex justify-between items-center";
+          li.innerHTML = `<span class="text-black font-medium">Capítulo ${chapter.chapterNumber}</span>
+                            <button class="bg-[#00A2FF] text-white px-3 py-2 rounded-lg hover:bg-[#0066CC] transition-colors font-medium" onclick='openChapterReadModal("${story.id}", "${chapter.id}")'>Leer</button>`;
+          chaptersList.appendChild(li);
+
+          if (chapter.ratings) {
+            Object.values(chapter.ratings).forEach(r => {
+              totalRating += r;
+              ratingCount++;
+            });
+          }
+        });
+
+        currentChapters.sort((a, b) => a.chapterNumber - b.chapterNumber);
+        currentEditingStory = {
+          id: story.id,
+          currentChapterId: currentChapters.length ? currentChapters[0].id : null
+        };
+
+        let overallRating = ratingCount ? (totalRating / ratingCount).toFixed(1) : 0;
+        document.getElementById('detail-metrics').innerHTML =
+          `<div class="bg-white p-2 rounded-lg shadow-sm flex flex-col items-center w-20">
+            <span class="text-lg font-bold text-black">${story.views || 0}</span>
+            <p class="text-xs text-[#00A2FF] mt-1">Visitas</p>
+          </div>
+          <div class="bg-white p-2 rounded-lg shadow-sm flex flex-col items-center w-20">
+            <span class="text-lg font-bold text-black">${overallRating}</span>
+            <p class="text-xs text-[#00A2FF] mt-1">Rating</p>
+          </div>
+          <div class="bg-white p-2 rounded-lg shadow-sm flex flex-col items-center w-20">
+            <span class="text-lg font-bold text-black">${chapterCount}</span>
+            <p class="text-xs text-[#00A2FF] mt-1">Capítulos</p>
+          </div>`;
+      })
+      .catch(error => console.error('Error cargando capítulos:', error));
     
     // Mostrar el modal
     const modal = document.getElementById('story-detail-modal');
@@ -12283,38 +12286,40 @@ async function likeNote(noteId) {
   function openStoryEdit(story) {
     currentEditingStory = story;
     document.getElementById('edit-story-language').value = story.language || "";
-    firebase.database().ref('stories/' + story.id + '/chapters').on('value', snapshot => {
-      currentChapters = [];
-      const chapterListDiv = document.getElementById('chapter-list');
-      chapterListDiv.innerHTML = "";
-      snapshot.forEach(child => {
-        const chapter = child.val();
-        chapter.id = child.key;
-        currentChapters.push(chapter);
-      });
-      currentChapters.sort((a, b) => a.chapterNumber - b.chapterNumber);
-      currentChapters.forEach(chapter => {
-        const div = document.createElement('div');
-        div.className = "flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 border border-gray-200 rounded-xl mb-2";
-        const chapterInfo = document.createElement('div');
-        chapterInfo.innerHTML = `<span class="font-semibold">${translations[currentLanguage].readChapter} ${chapter.chapterNumber}</span>`;
-        const btnContainer = document.createElement('div');
-        btnContainer.className = "flex space-x-2 mt-2 sm:mt-0";
-        const editButton = document.createElement('button');
-        editButton.className = "bg-blue-500 text-white px-2 py-1 rounded";
-        editButton.textContent = "Editar";
-        editButton.onclick = () => openChapterEditModal(chapter);
-        const deleteButton = document.createElement('button');
-        deleteButton.className = "bg-red-500 text-white px-2 py-1 rounded";
-        deleteButton.textContent = "Eliminar";
-        deleteButton.onclick = () => deleteChapter(chapter.id);
-        btnContainer.appendChild(editButton);
-        btnContainer.appendChild(deleteButton);
-        div.appendChild(chapterInfo);
-        div.appendChild(btnContainer);
-        chapterListDiv.appendChild(div);
-      });
-    });
+    fetch(`/.netlify/functions/get-chapters?storyId=${story.id}`)
+      .then(response => response.json())
+      .then(data => {
+        currentChapters = [];
+        const chapterListDiv = document.getElementById('chapter-list');
+        chapterListDiv.innerHTML = "";
+        const chapters = data.chapters || [];
+        chapters.forEach(chapter => {
+          currentChapters.push(chapter);
+        });
+        currentChapters.sort((a, b) => a.chapterNumber - b.chapterNumber);
+        currentChapters.forEach(chapter => {
+          const div = document.createElement('div');
+          div.className = "flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 border border-gray-200 rounded-xl mb-2";
+          const chapterInfo = document.createElement('div');
+          chapterInfo.innerHTML = `<span class="font-semibold">${translations[currentLanguage].readChapter} ${chapter.chapterNumber}</span>`;
+          const btnContainer = document.createElement('div');
+          btnContainer.className = "flex space-x-2 mt-2 sm:mt-0";
+          const editButton = document.createElement('button');
+          editButton.className = "bg-blue-500 text-white px-2 py-1 rounded";
+          editButton.textContent = "Editar";
+          editButton.onclick = () => openChapterEditModal(chapter);
+          const deleteButton = document.createElement('button');
+          deleteButton.className = "bg-red-500 text-white px-2 py-1 rounded";
+          deleteButton.textContent = "Eliminar";
+          deleteButton.onclick = () => deleteChapter(chapter.id);
+          btnContainer.appendChild(editButton);
+          btnContainer.appendChild(deleteButton);
+          div.appendChild(chapterInfo);
+          div.appendChild(btnContainer);
+          chapterListDiv.appendChild(div);
+        });
+      })
+      .catch(error => console.error('Error cargando capítulos:', error));
     document.getElementById('story-edit-view').classList.remove('hidden');
   }
 
@@ -12332,15 +12337,20 @@ async function likeNote(noteId) {
     const isPrivate = currentEditingStory.isPrivate || false;
     const newPrivacy = !isPrivate;
     
-    firebase.database().ref('stories/' + currentEditingStory.id).update({
-      isPrivate: newPrivacy
-    }).then(() => {
-      currentEditingStory.isPrivate = newPrivacy;
-      alert(newPrivacy ? 'Historia marcada como privada' : 'Historia marcada como pública');
-    }).catch(error => {
-      console.error('Error al cambiar privacidad:', error);
-      alert('Error al cambiar la privacidad');
-    });
+    fetch('/.netlify/functions/update-story', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ storyId: currentEditingStory.id, updates: { isPrivate: newPrivacy } })
+    })
+      .then(response => {
+        if (!response.ok) throw new Error('No se pudo actualizar privacidad');
+        currentEditingStory.isPrivate = newPrivacy;
+        alert(newPrivacy ? 'Historia marcada como privada' : 'Historia marcada como pública');
+      })
+      .catch(error => {
+        console.error('Error al cambiar privacidad:', error);
+        alert('Error al cambiar la privacidad');
+      });
   }
 
   function confirmDeleteStory() {
@@ -12350,8 +12360,13 @@ async function likeNote(noteId) {
     }
     
     if (confirm('¿Estás seguro de que quieres eliminar esta historia? Esta acción no se puede deshacer.')) {
-      firebase.database().ref('stories/' + currentEditingStory.id).remove()
-        .then(() => {
+      fetch('/.netlify/functions/delete-story', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ storyId: currentEditingStory.id })
+      })
+        .then(response => {
+          if (!response.ok) throw new Error('No se pudo eliminar la historia');
           alert('Historia eliminada correctamente');
           closeStoryEdit();
           openProfile();
@@ -12404,8 +12419,13 @@ async function likeNote(noteId) {
         }
         
         // Guardar todos los cambios
-        firebase.database().ref('stories/' + currentEditingStory.id).update(updates)
-          .then(() => {
+        fetch('/.netlify/functions/update-story', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ storyId: currentEditingStory.id, updates })
+        })
+          .then(response => {
+            if (!response.ok) throw new Error('No se pudo actualizar historia');
             Object.assign(currentEditingStory, updates);
             alert('Cambios guardados correctamente');
           })
@@ -12417,8 +12437,13 @@ async function likeNote(noteId) {
       reader.readAsDataURL(file);
     } else {
       // Guardar sin cambiar portada
-      firebase.database().ref('stories/' + currentEditingStory.id).update(updates)
-        .then(() => {
+      fetch('/.netlify/functions/update-story', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ storyId: currentEditingStory.id, updates })
+      })
+        .then(response => {
+          if (!response.ok) throw new Error('No se pudo actualizar historia');
           Object.assign(currentEditingStory, updates);
           alert('Cambios guardados correctamente');
         })
@@ -12435,96 +12460,60 @@ async function likeNote(noteId) {
     document.getElementById('search-view').classList.add('hidden');
     mainApp.classList.remove('hidden');
   }
-  let searchStoriesRef = null;
-  let searchStoriesHandler = null;
-
-  function detachSearchStoriesListener() {
-    if (searchStoriesRef && searchStoriesHandler) {
-      searchStoriesRef.off('value', searchStoriesHandler);
-    }
-    searchStoriesRef = null;
-    searchStoriesHandler = null;
-  }
-
   function performRealTimeSearch() {
-  const query = document.getElementById('search-input').value.trim().toLowerCase();
-  const category = document.getElementById('category-filter').value;
-  const recentRangeMs = 7 * 24 * 60 * 60 * 1000;
-  const recentThreshold = Date.now() - recentRangeMs;
+    const query = document.getElementById('search-input').value.trim().toLowerCase();
+    const category = document.getElementById('category-filter').value;
+    const recentRangeMs = 7 * 24 * 60 * 60 * 1000;
+    const recentThreshold = Date.now() - recentRangeMs;
 
-  detachSearchStoriesListener();
-  searchStoriesRef = firebase.database().ref('stories');
-  searchStoriesHandler = async snapshot => {
-    const books = [];
-    const firebaseStories = [];
-    snapshot.forEach(child => {
-      const story = child.val();
-      firebaseStories.push({ id: story.id || child.key, ...story });
-    });
+    loadStoriesFromAWS()
+      .then((stories) => {
+        const books = [];
+        stories.forEach((story) => {
+          const storyTimestamp = getStoryTimestamp(story);
+          const isRecent = storyTimestamp >= recentThreshold;
+          const matchesQuery = story.title && story.title.toLowerCase().includes(query);
+          const matchesCategory = !category
+            || (category === 'recent' && isRecent)
+            || (category === 'system' && (story.category === 'sistema' || story.category === 'system' || story.type === 'sistema' || story.type === 'system'))
+            || story.category === category;
 
-    const awsStories = await loadStoriesFromAWS();
-    const merged = new Map();
-    awsStories.forEach((story, index) => merged.set(getStoryKey(story, index), story));
-    firebaseStories.forEach((story, index) => {
-      const key = getStoryKey(story, index);
-      if (!merged.has(key)) {
-        merged.set(key, story);
-      }
-    });
+          if (matchesQuery && matchesCategory) {
+            books.push(story);
+          }
+        });
+        renderBooksCarousel(books);
+      })
+      .catch((error) => console.error('Error buscando historias:', error));
 
-    merged.forEach(story => {
-      const storyTimestamp = getStoryTimestamp(story);
-      const isRecent = storyTimestamp >= recentThreshold;
-      const matchesQuery = story.title && story.title.toLowerCase().includes(query);
-      const matchesCategory = !category
-        || (category === 'recent' && isRecent)
-        || (category === 'system' && (story.category === 'sistema' || story.category === 'system' || story.type === 'sistema' || story.type === 'system'))
-        || story.category === category;
-
-      if (matchesQuery && matchesCategory) {
-        books.push(story);
-      }
-    });
-    renderBooksCarousel(books);
-  };
-  searchStoriesRef.on('value', searchStoriesHandler);
-
-  if (query) {
-    firebase.database().ref('users').once('value').then(snapshot => {
-      let authors = [];
-      snapshot.forEach(child => {
-        const userData = child.val();
-        if (userData.username && userData.username.toLowerCase().includes(query)) {
-          userData.uid = child.key;
-          authors.push(userData);
-        }
-      });
-      renderAuthorsList(authors);
-    });
-  } else {
-    document.getElementById('search-authors-list').innerHTML = '';
+    if (query) {
+      fetch('/.netlify/functions/users')
+        .then(response => response.json())
+        .then(data => {
+          const authors = (data.users || []).filter(user =>
+            user.username && user.username.toLowerCase().includes(query)
+          );
+          renderAuthorsList(authors);
+        });
+    } else {
+      document.getElementById('search-authors-list').innerHTML = '';
+    }
   }
-}
 
 document.getElementById('category-filter').addEventListener('change', performRealTimeSearch);
   async function performSearch(query) {
     await new Promise(resolve => setTimeout(resolve, 3000));
-    const storiesSnapshot = await firebase.database().ref('stories').once('value');
+    const stories = await loadStoriesFromAWS();
     let books = [];
-    storiesSnapshot.forEach(child => {
-      const story = child.val();
+    stories.forEach(story => {
       if (story.title && story.title.toLowerCase().includes(query)) books.push(story);
     });
     renderBooksCarousel(books);
-    const usersSnapshot = await firebase.database().ref('users').once('value');
-    let authors = [];
-    usersSnapshot.forEach(child => {
-      const userData = child.val();
-      if (userData.username && userData.username.toLowerCase().includes(query)) {
-        userData.uid = child.key;
-        authors.push(userData);
-      }
-    });
+    const usersResponse = await fetch('/.netlify/functions/users');
+    const usersData = await usersResponse.json();
+    const authors = (usersData.users || []).filter(user =>
+      user.username && user.username.toLowerCase().includes(query)
+    );
     renderAuthorsList(authors);
   }
 
@@ -13635,11 +13624,17 @@ document.getElementById('category-filter').addEventListener('change', performRea
     }
 
     if (currentChapterEditId) {
-      const chapterRef = firebase.database().ref('stories/' + currentEditingStory.id + '/chapters/' + currentChapterEditId);
-      chapterRef.update({
-          content: content
+      fetch('/.netlify/functions/chapters', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storyId: currentEditingStory.id,
+          chapterId: currentChapterEditId,
+          chapter: { content }
         })
-        .then(() => {
+      })
+        .then(response => {
+          if (!response.ok) throw new Error('No se pudo actualizar capítulo');
           closeChapterCreationModal();
           alert("Capítulo actualizado correctamente.");
         })
@@ -13655,37 +13650,35 @@ document.getElementById('category-filter').addEventListener('change', performRea
         status: scheduledDate ? 'scheduled' : 'published'
       };
 
-      const chapterRef = firebase.database().ref('stories/' + currentEditingStory.id + '/chapters').push();
-      newChapter.id = chapterRef.key;
-      
-      if (scheduledDate) {
-        // Guardar en capítulos programados
-        firebase.database().ref('scheduledChapters/' + chapterRef.key).set({
+      const chapterId = `chapter_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      newChapter.id = chapterId;
+
+      fetch('/.netlify/functions/chapters', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           storyId: currentEditingStory.id,
-          publishDate: new Date(scheduledDate).getTime(),
-          status: 'pending'
+          chapterId,
+          chapter: newChapter
+        })
+      })
+        .then(response => {
+          if (!response.ok) throw new Error('No se pudo guardar capítulo');
+          if (scheduledDate) {
+            return saveScheduledChapter(chapterId, new Date(scheduledDate).getTime());
+          }
+        })
+        .then(() => {
+          closeChapterCreationModal();
+          alert(
+            scheduledDate
+              ? "Capítulo programado para publicación el " + new Date(scheduledDate).toLocaleDateString()
+              : translations[currentLanguage].chapterAdded
+          );
+        })
+        .catch(error => {
+          console.error("Error al agregar capítulo:", error);
         });
-        
-        // Guardar el capítulo con estado programado
-        chapterRef.set(newChapter)
-          .then(() => {
-            closeChapterCreationModal();
-            alert("Capítulo programado para publicación el " + new Date(scheduledDate).toLocaleDateString());
-          })
-          .catch(error => {
-            console.error("Error al programar capítulo:", error);
-          });
-      } else {
-        // Publicación inmediata
-        chapterRef.set(newChapter)
-          .then(() => {
-            closeChapterCreationModal();
-            alert(translations[currentLanguage].chapterAdded);
-          })
-          .catch(error => {
-            console.error("Error al agregar capítulo:", error);
-          });
-      }
     }
   });
 
@@ -13698,8 +13691,17 @@ document.getElementById('category-filter').addEventListener('change', performRea
 
   function deleteChapter(chapterId) {
     if (confirm("¿Estás seguro de eliminar este capítulo?")) {
-      firebase.database().ref('stories/' + currentEditingStory.id + '/chapters/' + chapterId).remove()
-        .then(() => {
+      fetch('/.netlify/functions/chapters', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'delete',
+          storyId: currentEditingStory.id,
+          chapterId
+        })
+      })
+        .then(response => {
+          if (!response.ok) throw new Error('No se pudo eliminar capítulo');
           alert("Capítulo eliminado correctamente.");
         })
         .catch(error => {
@@ -13723,8 +13725,10 @@ document.getElementById('category-filter').addEventListener('change', performRea
       mainApp.classList.add('hidden');
     }
     
-    firebase.database().ref('stories/' + storyId + '/chapters/' + chapterId).once('value').then(snapshot => {
-      const chapter = snapshot.val();
+    fetch(`/.netlify/functions/chapters?storyId=${storyId}&chapterId=${chapterId}`)
+      .then(response => response.json())
+      .then(data => {
+      const chapter = data.chapter;
       console.log('Datos del capítulo:', chapter); // Debug
       
       if (chapter) {
@@ -13743,14 +13747,16 @@ document.getElementById('category-filter').addEventListener('change', performRea
         
         const user = firebase.auth().currentUser;
         if (user) {
-          const chapterViewRef = firebase.database().ref('chapterViews/' + chapterId + '/' + user.uid);
-          chapterViewRef.once('value').then(viewSnap => {
-            if (!viewSnap.exists()) {
-              chapterViewRef.set(true);
-              const chapterViewsRef = firebase.database().ref('stories/' + storyId + '/chapters/' + chapterId + '/views');
-              chapterViewsRef.transaction(current => (current || 0) + 1);
-            }
-          });
+          fetch('/.netlify/functions/chapters', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'view',
+              storyId,
+              chapterId,
+              userId: user.uid
+            })
+          }).catch(error => console.warn('No se pudo registrar vista:', error));
         }
         
         // Mostrar el modal de lectura
@@ -13817,22 +13823,34 @@ document.getElementById('category-filter').addEventListener('change', performRea
     });
     const user = firebase.auth().currentUser;
     if (!user) return;
-    const ratingRef = firebase.database().ref('stories/' + storyId + '/chapters/' + chapterId + '/ratings/' + user.uid);
-    ratingRef.once('value').then(snapshot => {
-      const rating = snapshot.val();
-      if (rating) {
-        stars.forEach(star => {
-          if (parseInt(star.getAttribute('data-value')) <= rating) {
-            star.classList.add("selected");
-          }
-        });
-      }
-    });
+    fetch(`/.netlify/functions/chapters?storyId=${storyId}&chapterId=${chapterId}`)
+      .then(response => response.json())
+      .then(data => {
+        const rating = data.chapter?.ratings?.[user.uid];
+        if (rating) {
+          stars.forEach(star => {
+            if (parseInt(star.getAttribute('data-value')) <= rating) {
+              star.classList.add("selected");
+            }
+          });
+        }
+      });
     stars.forEach(star => {
       star.onclick = function() {
         const value = parseInt(this.getAttribute('data-value'));
-        ratingRef.set(value)
-          .then(() => {
+        fetch('/.netlify/functions/chapters', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'rate',
+            storyId,
+            chapterId,
+            userId: user.uid,
+            rating: value
+          })
+        })
+          .then(response => {
+            if (!response.ok) throw new Error('No se pudo guardar calificación');
             stars.forEach(s => {
               if (parseInt(s.getAttribute('data-value')) <= value) {
                 s.classList.add("selected");
@@ -13875,20 +13893,20 @@ document.getElementById('category-filter').addEventListener('change', performRea
   window.addEventListener('online', removeSkeletonEffect);
   /*********************** CARGA DE HISTORIAS **************************/
   function loadStories() {
-    firebase.database().ref('stories').on('value', snapshot => {
-      let stories = [];
-      snapshot.forEach(child => {
-        stories.push(child.val());
-      });
-      let newReleases = stories.sort((a, b) => getStoryTimestamp(b) - getStoryTimestamp(a));
-      renderStories(newReleases, 'new-releases', false);
-      let top10 = stories.sort((a, b) => b.views - a.views).slice(0, 10);
-      renderStories(top10, 'top10', false);
-      let popular = stories.sort((a, b) => b.views - a.views);
-      renderStories(popular, 'popular', false);
-      let terrorStories = stories.filter(story => story.category === 'terror');
-      renderStories(terrorStories, 'terror-stories', false);
-    });
+    fetch('/.netlify/functions/get-stories')
+      .then(response => response.json())
+      .then(data => {
+        let stories = data.stories || [];
+        let newReleases = stories.sort((a, b) => getStoryTimestamp(b) - getStoryTimestamp(a));
+        renderStories(newReleases, 'new-releases', false);
+        let top10 = stories.sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 10);
+        renderStories(top10, 'top10', false);
+        let popular = stories.sort((a, b) => (b.views || 0) - (a.views || 0));
+        renderStories(popular, 'popular', false);
+        let terrorStories = stories.filter(story => story.category === 'terror');
+        renderStories(terrorStories, 'terror-stories', false);
+      })
+      .catch(error => console.error('Error loading stories from AWS:', error));
   }
 
   function renderStories(stories, elementId, editMode) {
@@ -13921,34 +13939,35 @@ document.getElementById('category-filter').addEventListener('change', performRea
   }
   /*********************** CARGA DE HISTORIAS DEL USUARIO **************************/
   function loadUserStories(userId) {
-    const userStoriesRef = firebase.database().ref('stories').orderByChild('userId').equalTo(userId);
-    userStoriesRef.on('value', snapshot => {
-      const container = document.getElementById('user-stories');
-      container.innerHTML = "";
-      snapshot.forEach(child => {
-        const story = child.val();
-        if (story.blocked) return;
-        const card = document.createElement('div');
-        card.className = "cursor-pointer";
-        card.onclick = () => openStoryEdit(story);
-        card.innerHTML = `
-            <div class="rounded-2xl overflow-hidden shadow-md transform transition-transform hover:scale-105">
-              <img src="${story.coverImage || '/api/placeholder/200/300'}" alt="${story.title}" class="w-full h-40 object-cover">
-            </div>
-            <div class="mt-2">
-              <h3 class="font-semibold text-sm">${story.title}</h3>
-            </div>
-          `;
-        const langDiv = document.createElement('div');
-        langDiv.className = "mt-1 flex items-center space-x-2";
-        langDiv.innerHTML = `<span class="text-xs text-gray-500">Idioma: ${story.language || "N/A"}</span>`;
-        if (story.rating === "18plus") {
-          langDiv.innerHTML += ' <span class="text-xs text-red-600 font-bold border border-red-600 rounded px-1">+18</span>';
-        }
-        card.appendChild(langDiv);
-        container.appendChild(card);
-      });
-    });
+    fetch(`/.netlify/functions/get-stories?userId=${userId}`)
+      .then(response => response.json())
+      .then(data => {
+        const container = document.getElementById('user-stories');
+        container.innerHTML = "";
+        (data.stories || []).forEach(story => {
+          if (story.blocked) return;
+          const card = document.createElement('div');
+          card.className = "cursor-pointer";
+          card.onclick = () => openStoryEdit(story);
+          card.innerHTML = `
+              <div class="rounded-2xl overflow-hidden shadow-md transform transition-transform hover:scale-105">
+                <img src="${story.coverImage || '/api/placeholder/200/300'}" alt="${story.title}" class="w-full h-40 object-cover">
+              </div>
+              <div class="mt-2">
+                <h3 class="font-semibold text-sm">${story.title}</h3>
+              </div>
+            `;
+          const langDiv = document.createElement('div');
+          langDiv.className = "mt-1 flex items-center space-x-2";
+          langDiv.innerHTML = `<span class="text-xs text-gray-500">Idioma: ${story.language || "N/A"}</span>`;
+          if (story.rating === "18plus") {
+            langDiv.innerHTML += ' <span class="text-xs text-red-600 font-bold border border-red-600 rounded px-1">+18</span>';
+          }
+          card.appendChild(langDiv);
+          container.appendChild(card);
+        });
+      })
+      .catch(error => console.error('Error loading user stories from AWS:', error));
   }
   
   /*********************** FUNCIONES AUXILIARES PARA CARGAR HISTORIAS DESDE AWS S3 **************************/
@@ -13969,18 +13988,7 @@ document.getElementById('category-filter').addEventListener('change', performRea
   }
 
   async function loadStoriesFromFirebase() {
-    try {
-      const snapshot = await firebase.database().ref('stories').once('value');
-      const stories = [];
-      snapshot.forEach(child => {
-        const story = child.val() || {};
-        stories.push({ id: story.id || child.key, ...story });
-      });
-      return stories;
-    } catch (error) {
-      console.error('Error loading stories from Firebase:', error);
-      return [];
-    }
+    return [];
   }
   
   async function loadStoriesFromAWS() {
