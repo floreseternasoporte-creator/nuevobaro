@@ -356,6 +356,19 @@ body {
   border: 1px solid rgba(17, 17, 17, 0.08);
 }
 
+.story-placeholder .story-cover-container,
+.top-story-placeholder .top-story-poster {
+  background: var(--uber-field);
+}
+
+.story-placeholder .placeholder-line,
+.top-story-placeholder .placeholder-line {
+  height: 10px;
+  background: var(--uber-line);
+  border-radius: 9999px;
+  margin-top: 8px;
+}
+
 .story-cover-image {
   position: absolute;
   top: 0;
@@ -14288,6 +14301,10 @@ document.getElementById('category-filter').addEventListener('change', performRea
   function renderStories(stories, elementId, editMode) {
     const container = document.getElementById(elementId);
     container.innerHTML = '';
+    if (!stories.length) {
+      renderStoryPlaceholders(container);
+      return;
+    }
     stories.forEach(story => {
       if (story.blocked) return;
       const storyCard = document.createElement('div');
@@ -14399,13 +14416,41 @@ document.getElementById('category-filter').addEventListener('change', performRea
     return Array.from(merged.values());
   }
 
+  function renderStoryPlaceholders(container, count = 6) {
+    container.innerHTML = '';
+    for (let i = 0; i < count; i += 1) {
+      const card = document.createElement('div');
+      card.className = 'story-card story-placeholder flex-shrink-0';
+      card.innerHTML = `
+        <div class="story-cover-container"></div>
+        <div class="placeholder-line" style="width: 70%;"></div>
+        <div class="placeholder-line" style="width: 40%;"></div>
+      `;
+      container.appendChild(card);
+    }
+  }
+
+  function renderTopStoryPlaceholders(container, count = 4) {
+    container.innerHTML = '';
+    for (let i = 0; i < count; i += 1) {
+      const card = document.createElement('div');
+      card.className = 'top-story-card top-story-placeholder flex-shrink-0';
+      card.innerHTML = `
+        <div class="top-story-poster"></div>
+        <div class="placeholder-line" style="width: 75%;"></div>
+        <div class="placeholder-line" style="width: 45%;"></div>
+      `;
+      container.appendChild(card);
+    }
+  }
+
   async function loadTopStories() {
     const stories = await loadStoriesFromAWS();
     const container = document.getElementById('top-stories');
     container.innerHTML = '';
 
     if (!stories.length) {
-      container.innerHTML = '<p class="text-gray-500">No hay historias disponibles</p>';
+      renderTopStoryPlaceholders(container);
       return;
     }
 
@@ -14535,7 +14580,7 @@ document.getElementById('category-filter').addEventListener('change', performRea
     container.innerHTML = '';
     
     if (!stories.length) {
-      container.innerHTML = '<p class="text-gray-500">No hay historias disponibles</p>';
+      renderStoryPlaceholders(container);
       return;
     }
     
@@ -14590,6 +14635,10 @@ document.getElementById('category-filter').addEventListener('change', performRea
     const stories = await loadStoriesFromAWS();
     const container = document.getElementById('featured-authors');
     container.innerHTML = '';
+    if (!stories.length) {
+      renderStoryPlaceholders(container, 4);
+      return;
+    }
     
     const authorCounts = {};
     stories.forEach(story => {
@@ -14654,8 +14703,11 @@ document.getElementById('category-filter').addEventListener('change', performRea
     const stories = await loadStoriesFromAWS();
     const container = document.getElementById('trending-stories');
     container.innerHTML = '';
-    
-    if (!stories.length) return;
+
+    if (!stories.length) {
+      renderStoryPlaceholders(container);
+      return;
+    }
     
     const now = Date.now();
     const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000);
@@ -14678,7 +14730,12 @@ document.getElementById('category-filter').addEventListener('change', performRea
     const stories = await loadStoriesFromAWS();
     const container = document.getElementById('mystery-stories');
     container.innerHTML = '';
-    
+
+    if (!stories.length) {
+      renderStoryPlaceholders(container);
+      return;
+    }
+
     const mysteryStories = stories
       .filter(story => story.category === 'misterio')
       .sort((a, b) => (b.views || 0) - (a.views || 0))
@@ -14693,7 +14750,11 @@ document.getElementById('category-filter').addEventListener('change', performRea
     const stories = await loadStoriesFromAWS();
     const container = document.getElementById('adventure-stories');
     container.innerHTML = '';
-    
+    if (!stories.length) {
+      renderStoryPlaceholders(container);
+      return;
+    }
+
     const adventureStories = stories
       .filter(story => story.category === 'aventura')
       .sort((a, b) => (b.ratingValue || 0) - (a.ratingValue || 0))
@@ -15386,7 +15447,7 @@ document.getElementById('category-filter').addEventListener('change', performRea
     container.innerHTML = '';
     
     if (!stories.length) {
-      container.innerHTML = '<p class="text-gray-500">No hay historias disponibles</p>';
+      renderStoryPlaceholders(container);
       return;
     }
     
@@ -15441,6 +15502,10 @@ document.getElementById('category-filter').addEventListener('change', performRea
     const stories = await loadStoriesFromAWS();
     const container = document.getElementById('featured-authors');
     container.innerHTML = '';
+    if (!stories.length) {
+      renderStoryPlaceholders(container, 4);
+      return;
+    }
     
     const authorCounts = {};
     stories.forEach(story => {
